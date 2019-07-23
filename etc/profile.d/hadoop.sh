@@ -19,3 +19,4 @@ export HADOOP_LOG_DIR=/var/log/hadoop/
 export SPARK_WORKER_DIR=/var/lib/spark/worker/
 export SPARK_LOCAL_DIRS=/var/lib/spark/local/
 export SPARK_LOG_DIR=/var/log/spark/
+export LIVY_LOG_DIR=/var/log/livy/
