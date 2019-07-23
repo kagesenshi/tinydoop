@@ -18,5 +18,14 @@
     <property>
         <name>yarn.nodemanager.aux-services</name>
         <value>mapreduce_shuffle</value>
-    </property>
-</configuration>
+     </property>
+     <property>
+        <name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name>
+        <value>98.5</value>
+     </property>
+     <property>
+        <name>yarn.nodemanager.vmem-check-enabled</name>
+        <value>false</value>
+     </property>
+
+  </configuration>

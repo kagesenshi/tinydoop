@@ -17,18 +17,16 @@
 # under the License.
 
 [Unit]
-Description=Livy server
-After=network.target resourcemanager.service
+Description=Jupyterlab
+After=network.target namenode.service
 Wants=namenode.service
 
 [Service]
 User=tinydoop
 Group=tinydoop
-Type=forking
-EnvironmentFile=/etc/sysconfig/livy
-ExecStart=/bin/tinydoop_start.sh /opt/livy/bin/livy-server start
-ExecStop=/bin/tinydoop_start.sh /opt/livy/bin/livy-server stop
-PIDFile=/tmp/livy-tinydoop-server.pid
+Type=simple
+ExecStart=/bin/tinydoop_start.sh /opt/jupyterlab/bin/jupyter-lab --no-browser --ip=0.0.0.0 --LabApp.token=''
+WorkingDirectory=/home/tinydoop/
 Restart=on-failure
 RestartSec=5s
 
