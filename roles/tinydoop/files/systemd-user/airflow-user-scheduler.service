@@ -22,11 +22,10 @@ After=network.target mariadb.service
 # Wants=namenode.service
 
 [Service]
-EnvironmentFile=/etc/sysconfig/airflow
-User=tinydoop
-Group=tinydoop
 Type=simple
-ExecStart=/opt/airflow/bin/airflow scheduler
+ExecStart=$AIRFLOW_HOME/bin/airflow scheduler
+StandardOutput=$AIRFLOW_HOME/logs/airflow-scheduler.log
+StandardError=$AIRFLOW_HOME/logs/airflow-scheduler.errors.log
 Restart=on-failure
 RestartSec=5s
 

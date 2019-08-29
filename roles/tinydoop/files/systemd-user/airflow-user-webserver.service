@@ -17,16 +17,15 @@
 # under the License.
 
 [Unit]
-Description=Jupyterlab
-After=network.target namenode.service
-Wants=namenode.service
+Description=Airflow webserver
+After=network.target mariadb.service
+# Wants=namenode.service
 
 [Service]
-User=tinydoop
-Group=tinydoop
 Type=simple
-ExecStart=/bin/tinydoop_start.sh /opt/jupyterlab/bin/jupyter-lab --no-browser --ip=0.0.0.0 --LabApp.token=''
-WorkingDirectory=/home/tinydoop/
+ExecStart=$AIRFLOW_HOME/bin/airflow webserver
+StandardOutput=$AIRFLOW_HOME/logs/airflow.log
+StandardError=$AIRFLOW_HOME/logs/airflow.errors.log
 Restart=on-failure
 RestartSec=5s
 

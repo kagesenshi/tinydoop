@@ -16,4 +16,6 @@ source /etc/profile.d/hadoop.sh
 
 schematool -dbType mysql -initSchema
 
-kill $$
+kill $MY_PID
+
+exit 0

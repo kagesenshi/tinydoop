@@ -16,4 +16,6 @@ source /etc/profile.d/99-airflow.sh
 
 airflow initdb
 
-kill $$
+kill $MY_PID
+
+exit 0

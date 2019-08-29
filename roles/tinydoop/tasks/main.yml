@@ -1,0 +1,388 @@
+---
+# tasks file for tinydoop
+#
+- name: setup dependencies
+  dnf: 
+     name: 
+       - mariadb-server 
+       - java-1.8.0-openjdk-devel
+       - mysql-connector-java
+       - postgresql-jdbc 
+       - polkit 
+       - libxcrypt-compat 
+       - less
+       - npm
+       - python3
+       - python3-devel
+       - python3-virtualenv
+       - gcc
+       - gcc-c++
+       - postgresql-devel
+       - mariadb-devel
+       - krb5-devel
+       - cyrus-sasl-devel
+       - dbus-tools
+       - R
+       - R-IRkernel
+     state: latest
+
+- name: create user
+  user:
+    name: tinydoop
+    create_home: yes
+
+- name: setup directories
+  file:
+    name: "{{ item }}"
+    state: directory
+  with_items:
+    - /etc/jupyterhub/
+    - /usr/share/tinydoop/eggbasket/
+    - /usr/share/tinydoop/systemd/
+    - /var/lib/hadoop/hive_metastore
+    - /var/lib/hadoop/namenode/name
+    - /var/lib/hadoop/namenode/edits
+    - /var/lib/hadoop/datanode
+    - /var/lib/spark/worker
+    - /var/lib/spark/local
+    - /var/lib/nifi/
+    - /var/lib/jupyterhub/
+    - /var/log/hadoop/
+    - /var/log/spark/
+    - /var/log/livy/
+    - /var/log/nifi/
+    - /var/log/hbase/
+    - /var/lib/zookeeper/
+    - /etc/airflow/
+    - /etc/airflow/dags
+    - /etc/airflow/plugins
+    - /var/log/airflow
+
+- name: extract hadoop distribution
+  unarchive:
+    src: "{{ item.src }}"
+    dest: /opt/
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: downloads/hadoop-3.1.2.tar.gz, creates: /opt/hadoop-3.1.2 }
+    - { src: downloads/apache-hive-2.3.5-bin.tar.gz, creates: /opt/apache-hive-2.3.5-bin }
+    - { src: downloads/spark-2.4.3-bin-without-hadoop.tgz, creates: /opt/spark-2.4.3-bin-without-hadoop }
+    - { src: downloads/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz, creates: /opt/sqoop-1.4.7.bin__hadoop-2.6.0 }
+    - { src: downloads/apache-livy-0.6.0-incubating-bin.tar.gz, creates: /opt/apache-livy-0.6.0-incubating-bin }
+    - { src: downloads/nifi-1.9.2-bin.tar.gz, creates: /opt/nifi-1.9.2 }
+    - { src: downloads/hbase-2.2.0-bin.tar.gz, creates: /opt/hbase-2.2.0 }
+    - { src: downloads/apache-zookeeper-3.5.5-bin.tar.gz, creates: /opt/apache-zookeeper-3.5.5-bin }
+
+- name: create symlinks
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+    - { src: /opt/apache-hive-2.3.5-bin, dest: /opt/hive }
+    - { src: /opt/hadoop-3.1.2, dest: /opt/hadoop }
+    - { src: /opt/spark-2.4.3-bin-without-hadoop, dest: /opt/spark }
+    - { src: /opt/sqoop-1.4.7.bin__hadoop-2.6.0, dest: /opt/sqoop }
+    - { src: /opt/apache-livy-0.6.0-incubating-bin, dest: /opt/livy }
+    - { src: /opt/nifi-1.9.2, dest: /opt/nifi }
+    - { src: /opt/hbase-2.2.0, dest: /opt/hbase }
+    - { src: /opt/apache-zookeeper-3.5.5-bin/, dest: /opt/zookeeper }
+
+- name: upload nifi permission fix
+  copy:
+    src: fix-nifi-permissions.sh
+    dest: /usr/share/tinydoop/fix-nifi-permissions.sh
+
+- name: fix nifi permissions
+  command: bash /usr/share/tinydoop/fix-nifi-permissions.sh
+  args:
+    creates: /opt/nifi/.permission_fixed
+
+- name: install spark-hive
+  copy:
+    src: downloads/spark-hive_2.11-2.4.3.jar
+    dest: /opt/spark/jars/
+
+- name: copy hadoop config
+  copy:
+    src: '{{ item }}'
+    dest: /opt/hadoop/etc/hadoop/
+  with_fileglob:
+    - etc/hadoop/*
+
+- name: copy hive config
+  copy:
+    src: '{{ item }}'
+    dest: /opt/hive/conf/
+  with_fileglob:
+    - etc/hive/*
+
+
+- name: copy hbase config
+  copy:
+    src: '{{ item }}'
+    dest: /opt/hbase/conf/
+  with_fileglob:
+    - etc/hbase/*
+
+
+- name: copy zookeeper config
+  copy:
+    src: '{{ item }}'
+    dest: /opt/zookeeper/conf/
+  with_fileglob:
+    - etc/zookeeper/*
+
+- name: copy nifi config
+  copy:
+    src: '{{ item }}'
+    dest: /opt/nifi/conf/
+  with_fileglob:
+    - etc/nifi/*
+
+- name: copy hadoop profile
+  copy:
+    src: etc/profile.d/hadoop.sh
+    dest: /etc/profile.d/90-hadoop.sh
+
+- name: copy tinydoop initializer script
+  copy:
+    src: '{{ item }}'
+    dest: /usr/share/tinydoop/
+  with_items:
+    - init-hdfs.sh
+    - init-mysql.sh
+
+- name: copy system level systemd config
+  copy:
+    src: '{{ item }}'
+    dest: /usr/lib/systemd/system/
+  with_fileglob:
+    - systemd/*
+
+- name: copy nifi environment
+  copy:
+    src: opt/nifi/bin/nifi-env.sh
+    dest: /opt/nifi/bin/nifi-env.sh
+
+
+- name: copy nifi config 
+  copy:
+    src: '{{ item }}'
+    dest: /opt/nifi/conf/
+  with_fileglob:
+    - systemd/*
+
+- name: copy tinydoop startup wrapper
+  copy:
+    src: bin/tinydoop_start.sh
+    dest: /usr/bin/tinydoop_start.sh
+    mode: 0755
+
+- name: copy livy environment
+  copy:
+    src: etc/sysconfig/livy
+    dest: /etc/sysconfig/livy
+
+
+
+
+
+- name: copy mysql cnf
+  copy:
+    src: etc/my.cnf.d/tinydoop.cnf
+    dest: /etc/my.cnf.d/tinydoop.cnf
+
+- name: copy sample files
+  copy: 
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: etc/airflow/airflow.cfg, dest: /usr/share/tinydoop/airflow.cfg.sample }
+    - { src: init-mysql-airflow.sh, dest: /usr/share/tinydoop/init-mysql-airflow.sh }
+    - { src: etc/sparkmagic/config.json, 
+        dest: /usr/share/tinydoop/sparkmagic-config.json }
+
+
+- name: copy nifi config 
+  copy:
+    src: '{{ item }}'
+    dest: /usr/share/tinydoop/
+  with_fileglob:
+    - '*-requirements.txt'
+
+#- name: copy eggbasket 
+#  copy:
+#    src: '{{ item }}'
+#    dest: /usr/share/tinydoop/eggbasket/
+#  with_fileglob:
+#    - eggbasket/*
+
+#- name: copy systemd user
+#  copy:
+#    src: '{{ item }}'
+#    dest: /usr/lib/systemd/user
+#  with_fileglob:
+#    - systemd-user/*
+#
+- name: change ownerships
+  command: 'chown -R tinydoop:tinydoop {{ item }}'
+  with_items:
+    - /usr/share/tinydoop/eggbasket/
+    - /usr/share/tinydoop/systemd/
+    - /var/lib/hadoop/hive_metastore
+    - /var/lib/hadoop/namenode/name
+    - /var/lib/hadoop/namenode/edits
+    - /var/lib/hadoop/datanode
+    - /var/lib/spark/worker
+    - /var/lib/spark/local
+    - /var/lib/nifi/
+    - /var/log/hadoop/
+    - /var/log/spark/
+    - /var/log/livy/
+    - /var/log/nifi/
+    - /var/log/hbase/
+    - /var/log/jupyterhub/
+    - /var/lib/zookeeper/
+    - /opt/hadoop-3.1.2/
+    - /opt/apache-zookeeper-3.5.5-bin/
+    - /opt/apache-hive-2.3.5-bin/
+    - /opt/apache-livy-0.6.0-incubating-bin/
+    - /opt/hbase-2.2.0/
+    - /opt/nifi-1.9.2/
+    - /opt/spark-2.4.3-bin-without-hadoop/
+    - /opt/sqoop-1.4.7.bin__hadoop-2.6.0/
+    - /etc/airflow/
+    - /etc/airflow/dags
+    - /etc/airflow/plugins
+    - /var/log/airflow
+
+
+
+- name: format namenode 
+  command: bash /usr/share/tinydoop/init-hdfs.sh
+  become: yes
+  become_user: tinydoop
+  args:
+    creates: /var/lib/hadoop/namenode/name/current/
+
+- name: format hive metadata
+  command: bash /usr/share/tinydoop/init-mysql.sh
+  args:
+    creates: /var/lib/mysql/hive_metastore/
+
+- name: upload jupyterhub initializer
+  copy:
+    src: init-jupyterhub.sh
+    dest: /usr/share/tinydoop/init-jupyterhub.sh
+
+- name: initialize jupyterhub
+  command: bash /usr/share/tinydoop/init-jupyterhub.sh
+  args:
+    creates: /opt/jupyterhub/bin/jupyterhub
+
+- name: copy jupyterhub environment
+  copy:
+    src: etc/sysconfig/jupyterhub
+    dest: /etc/sysconfig/jupyterhub
+
+- name: copy jupyterhub config
+  copy:
+    src: etc/jupyterhub/jupyterhub_config.py
+    dest: /etc/jupyterhub/jupyterhub_config.py
+
+
+
+- name: upload airflow initializer
+  copy:
+    src: init-airflow.sh
+    dest: /usr/share/tinydoop/init-airflow.sh
+
+- name: initialize airflow
+  command: bash /usr/share/tinydoop/init-airflow.sh
+  args:
+    creates: /opt/airflow/bin/airflow
+
+- name: copy airflow environment
+  copy:
+    src: etc/sysconfig/airflow
+    dest: /etc/sysconfig/airflow
+
+- name: copy airflow config
+  copy:
+    src: etc/airflow/airflow.cfg
+    dest: /etc/airflow/airflow.cfg
+
+- name: copy airflow profile
+  copy:
+    src: etc/profile.d/99-airflow.sh
+    dest: /etc/profile.d/99-airflow.sh
+
+
+
+- name: change airflow ownerships
+  command: 'chown -R tinydoop:tinydoop {{ item }}'
+  with_items:
+    - /opt/airflow
+    - /etc/airflow
+
+
+- name: initialize airflow database
+  command: bash /usr/share/tinydoop/init-mysql-airflow.sh
+  args:
+    creates: /var/lib/mysql/airflow
+
+
+- name: reload systemd
+  systemd:
+    name: '{{ item }}'
+    state: started
+    daemon_reload: yes
+  with_items:
+    - zookeeper
+    - namenode
+    - secondarynamenode
+    - datanode
+    - httpfs
+    - resourcemanager
+    - nodemanager
+    - nifi
+    - jupyterhub
+    - hbase-master
+    - hbase-regionserver
+    - hiveserver2
+    - livy
+    - airflow-webserver
+    - airflow-scheduler
+
+- name: open firewall
+  firewalld:
+    port: '{{ item }}'
+    permanent: yes
+    immediate: yes
+    state: enabled
+  with_items:
+    - 8080/tcp
+    - 8090/tcp
+    - 8000/tcp
+
+
+- name: create additional users
+  user:
+    name: '{{ item }}'
+    create_home: yes
+    password: $6$.sXhxyZUs38wckhY$GSQCt4HFjSiokSWXevq3yFkZMuYlzlHWPsli4JEKRQjS06nCOJ.y.eCJiyQxZZZdg3MkKvHw7CEtD5468DJlb1
+  with_items:
+    - student
+
+- name: upload user home directory initializer
+  copy:
+    src: init-hadoop-user.sh
+    dest: /usr/share/tinydoop/init-hadoop-user.sh
+
+- name: init hadoop user
+  command: '/bin/tinydoop_start.sh bash /usr/share/tinydoop/init-hadoop-user.sh {{ item }}'
+  with_items:
+    - student
+  become: yes
+  become_user: tinydoop
