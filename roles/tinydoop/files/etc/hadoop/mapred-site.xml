@@ -24,14 +24,15 @@
 
    <property>
       <name>yarn.app.mapreduce.am.env</name>
-      <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME</value>
+      <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME,HADOOP_HOME=$HADOOP_HOME,HADOOP_COMMON_HOME=$HADOOP_COMMON_HOME,HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME,HADOOP_HDFS_HOME=$HADOOP_HDFS_HOME,HADOOP_YARN_HOME=$HADOOP_YARN_HOME,YARN_HOME=$YARN_HOME,HIVE_HOME=$HIVE_HOME,HCAT_HOME=$HCAT_HOME,SPARK_HOME=$SPARK_HOME,SQOOP_HOME=$SQOOP_HOME,HADOOP_CLASSPATH=$HADOOP_CLASSPATH</value>
    </property>
+
    <property>
       <name>mapreduce.map.env</name>
-      <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME</value>
+      <value>${yarn.app.mapreduce.am.env}</value>
    </property>
    <property>
       <name>mapreduce.reduce.env</name>
-      <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME</value>
+      <value>${yarn.app.mapreduce.am.env}</value>
    </property>
 </configuration>

@@ -1,2 +1,52 @@
 ---
 # vars file for tinydoop
+#
+#
+download_packages: true
+download_cache: /var/tmp/
+upload_eggbasket: false
+eggbasket_dir: null
+
+hadoop_pkg:
+  version: 3.2.0
+  uri: https://www-eu.apache.org/dist/hadoop/common/hadoop-3.2.0/hadoop-3.2.0.tar.gz
+  checksum: md5:5AC41982DC50C96C897C70758FC54CA3
+
+hbase_pkg: 
+  version: 2.2.0
+  uri: https://www-eu.apache.org/dist/hbase/2.2.0/hbase-2.2.0-bin.tar.gz
+  checksum: md5:d150aa3b337f1edf7db020bfc4701d58
+
+zookeeper_pkg:
+  version: 3.5.5
+  uri: https://www-eu.apache.org/dist/zookeeper/zookeeper-3.5.5/apache-zookeeper-3.5.5-bin.tar.gz
+  checksum: md5:6f8193604e6b34f700973acbb1291d59
+
+nifi_pkg:
+  version: 1.9.2
+  uri: https://www-eu.apache.org/dist/nifi/1.9.2/nifi-1.9.2-bin.tar.gz
+  checksum: md5:473a7e5576c46626251d3d8d98e8cbd8
+
+sqoop_pkg:
+  version: 1.4.7
+  uri: https://www-eu.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.tar.gz
+  checksum: md5:5f1d7308d798e293fa075387f7165357
+
+spark_pkg:
+  version: 2.4.4
+  uri: https://www-eu.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-without-hadoop.tgz
+  checksum: md5:6f8193604e6b34f700973acbb1291d59
+
+
+livy_pkg:
+  version: 0.6.0
+  uri: https://www.apache.org/dyn/closer.lua/incubator/livy/0.6.0-incubating/apache-livy-0.6.0-incubating-bin.zip
+  checksum: md5:85f48a069c156a005e858ea21bbb3fe9
+
+minio_bin:
+  uri: https://dl.min.io/server/minio/release/linux-amd64/minio
+
+metabase_jar:
+  version: 0.33.2
+  uri: http://downloads.metabase.com/v0.33.2/metabase.jar
+  checksum: md5:e93e18d572600c99bb32689874279fcf

@@ -1,0 +1,6 @@
+MB_DB_TYPE=h2
+MB_DB_FILE=/var/lib/metabase/metabase.db
+MB_DB_PORT=
+MB_DB_USER=
+MB_DB_PASS=
+MB_DB_HOST=

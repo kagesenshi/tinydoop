@@ -2,7 +2,7 @@
 
 # /usr/libexec/mysql-prepare-db-dir 
 /usr/bin/mysqld_safe --basedir=/usr &
-MY_PID=$$
+MY_PID=$!
 
 until mysqladmin ping >/dev/null 2>&1; do
   echo -n "."; sleep 0.2

@@ -1,13 +1,13 @@
 
-source /etc/profile.d/hadoop.sh
+source /etc/profile.d/90-hadoop.sh
 
 hdfs namenode -format
 
 hdfs namenode &
-NN_PID=$$
+NN_PID=$!
 
 hdfs datanode & 
-DN_PID=$$
+DN_PID=$!
 
 sleep 30
 
@@ -16,3 +16,5 @@ hdfs dfs -mkdir -p /user/tinydoop/ /user/hive/warehouse
 sleep 30
 
 kill $NN_PID $DN_PID
+
+exit 0

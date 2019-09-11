@@ -1,6 +1,32 @@
 ---
 # tasks file for tinydoop
 #
+#
+- name: download packages
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    checksum: '{{ item.checksum }}'
+    dest: '{{ download_cache }}'
+  with_items:
+    - '{{ hadoop_pkg }}'
+    - '{{ hbase_pkg }}'
+    - '{{ zookeeper_pkg }}'
+    - '{{ nifi_pkg }}'
+    - '{{ sqoop_pkg }}'
+    - '{{ spark_pkg }}'
+    - '{{ metabase_jar }}'
+  when: download_packages
+
+- name: download packages
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}'
+  with_items:
+    - '{{ minio_bin }}'
+  when: download_packages
+
 - name: setup dependencies
   dnf: 
      name: 
@@ -24,7 +50,16 @@
        - dbus-tools
        - R
        - R-IRkernel
+       - ntp
+       - ntpdate
+       - cockpit
+       - postgresql-server
      state: latest
+
+- name: disable selinux
+  selinux:
+    policy: targeted
+    state: permissive
 
 - name: create user
   user:
@@ -46,17 +81,22 @@
     - /var/lib/spark/worker
     - /var/lib/spark/local
     - /var/lib/nifi/
+    - /var/lib/minio/
+    - /var/lib/metabase/
     - /var/lib/jupyterhub/
     - /var/log/hadoop/
     - /var/log/spark/
+    - /var/log/jupyterhub/
     - /var/log/livy/
     - /var/log/nifi/
     - /var/log/hbase/
     - /var/lib/zookeeper/
     - /etc/airflow/
-    - /etc/airflow/dags
-    - /etc/airflow/plugins
-    - /var/log/airflow
+    - /etc/airflow/dags/
+    - /etc/airflow/plugins/
+    - /var/log/airflow/
+    - /var/log/minio/
+    - /var/log/metabase/
 
 - name: extract hadoop distribution
   unarchive:
@@ -64,14 +104,20 @@
     dest: /opt/
     creates: "{{ item.creates }}"
   with_items:
-    - { src: downloads/hadoop-3.1.2.tar.gz, creates: /opt/hadoop-3.1.2 }
-    - { src: downloads/apache-hive-2.3.5-bin.tar.gz, creates: /opt/apache-hive-2.3.5-bin }
-    - { src: downloads/spark-2.4.3-bin-without-hadoop.tgz, creates: /opt/spark-2.4.3-bin-without-hadoop }
-    - { src: downloads/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz, creates: /opt/sqoop-1.4.7.bin__hadoop-2.6.0 }
-    - { src: downloads/apache-livy-0.6.0-incubating-bin.tar.gz, creates: /opt/apache-livy-0.6.0-incubating-bin }
-    - { src: downloads/nifi-1.9.2-bin.tar.gz, creates: /opt/nifi-1.9.2 }
-    - { src: downloads/hbase-2.2.0-bin.tar.gz, creates: /opt/hbase-2.2.0 }
-    - { src: downloads/apache-zookeeper-3.5.5-bin.tar.gz, creates: /opt/apache-zookeeper-3.5.5-bin }
+    - { src: '{{ download_cache }}/hadoop-{{ hadoop_pkg.version }}.tar.gz', 
+        creates: '/opt/hadoop-{{ hadoop_pkg.version }}' }
+    - { src: '{{ download_cache }}/spark-{{ spark_pkg.version }}-bin-without-hadoop.tgz', 
+        creates: '/opt/spark-{{ spark_pkg.version }}-bin-without-hadoop' }
+    - { src: '{{ download_cache }}/sqoop-{{ sqoop_pkg.version }}.tar.gz', 
+        creates: '/opt/sqoop-{{ sqoop_pkg.version }}' }
+    - { src: '{{ download_cache }}/apache-livy-{{ livy_pkg.version }}-incubating-bin.tar.gz', 
+        creates: '/opt/apache-livy-{{ livy_pkg.version }}-incubating-bin' }
+    - { src: '{{ download_cache }}/nifi-{{ nifi_pkg.version }}-bin.tar.gz', 
+        creates: '/opt/nifi-{{ nifi_pkg.version }}' }
+    - { src: '{{ download_cache }}/hbase-{{ hbase_pkg.version }}-bin.tar.gz', 
+        creates: '/opt/hbase-{{ hbase_pkg.version }}' }
+    - { src: '{{ download_cache }}/apache-zookeeper-{{ zookeeper_pkg.version }}-bin.tar.gz', 
+        creates: '/opt/apache-zookeeper-{{ zookeeper_pkg.version }}-bin' }
 
 - name: create symlinks
   file:
@@ -79,14 +125,20 @@
     dest: '{{ item.dest }}'
     state: link
   with_items:
-    - { src: /opt/apache-hive-2.3.5-bin, dest: /opt/hive }
-    - { src: /opt/hadoop-3.1.2, dest: /opt/hadoop }
-    - { src: /opt/spark-2.4.3-bin-without-hadoop, dest: /opt/spark }
-    - { src: /opt/sqoop-1.4.7.bin__hadoop-2.6.0, dest: /opt/sqoop }
-    - { src: /opt/apache-livy-0.6.0-incubating-bin, dest: /opt/livy }
-    - { src: /opt/nifi-1.9.2, dest: /opt/nifi }
-    - { src: /opt/hbase-2.2.0, dest: /opt/hbase }
-    - { src: /opt/apache-zookeeper-3.5.5-bin/, dest: /opt/zookeeper }
+    #    - { src: /opt/apache-hive-2.3.5-bin, dest: /opt/hive }
+    - { src: '/opt/hadoop-{{ hadoop_pkg.version }}', dest: /opt/hadoop }
+    - { src: '/opt/spark-{{ spark_pkg.version }}-bin-without-hadoop', 
+          dest: /opt/spark }
+    - { src: '/opt/sqoop-{{ sqoop_pkg.version }}', 
+          dest: /opt/sqoop }
+    - { src: '/opt/apache-livy-{{ livy_pkg.version }}-incubating-bin', 
+          dest: /opt/livy }
+    - { src: '/opt/nifi-{{ nifi_pkg.version }}', 
+          dest: /opt/nifi }
+    - { src: '/opt/hbase-{{ hbase_pkg.version }}', 
+          dest: /opt/hbase }
+    - { src: '/opt/apache-zookeeper-{{ zookeeper_pkg.version }}-bin/', 
+          dest: /opt/zookeeper }
 
 - name: upload nifi permission fix
   copy:
@@ -98,11 +150,11 @@
   args:
     creates: /opt/nifi/.permission_fixed
 
-- name: install spark-hive
-  copy:
-    src: downloads/spark-hive_2.11-2.4.3.jar
-    dest: /opt/spark/jars/
-
+#- name: install spark-hive
+#  copy:
+#    src: '{{ download_cache }}/spark-hive_2.11-2.4.3.jar'
+#    dest: /opt/spark/jars/
+#
 - name: copy hadoop config
   copy:
     src: '{{ item }}'
@@ -211,12 +263,13 @@
   with_fileglob:
     - '*-requirements.txt'
 
-#- name: copy eggbasket 
-#  copy:
-#    src: '{{ item }}'
-#    dest: /usr/share/tinydoop/eggbasket/
-#  with_fileglob:
-#    - eggbasket/*
+- name: copy eggbasket 
+  copy:
+    src: '{{ item }}'
+    dest: /usr/share/tinydoop/eggbasket/
+  with_fileglob:
+    - '{{ eggbasket_dir }}/*'
+  when: upload_eggbasket
 
 #- name: copy systemd user
 #  copy:
@@ -226,7 +279,11 @@
 #    - systemd-user/*
 #
 - name: change ownerships
-  command: 'chown -R tinydoop:tinydoop {{ item }}'
+  file: 
+    path: '{{ item }}'
+    recurse: yes
+    owner: tinydoop
+    group: tinydoop
   with_items:
     - /usr/share/tinydoop/eggbasket/
     - /usr/share/tinydoop/systemd/
@@ -236,6 +293,8 @@
     - /var/lib/hadoop/datanode
     - /var/lib/spark/worker
     - /var/lib/spark/local
+    - /var/lib/minio/
+    - /var/lib/metabase/
     - /var/lib/nifi/
     - /var/log/hadoop/
     - /var/log/spark/
@@ -244,20 +303,26 @@
     - /var/log/hbase/
     - /var/log/jupyterhub/
     - /var/lib/zookeeper/
-    - /opt/hadoop-3.1.2/
-    - /opt/apache-zookeeper-3.5.5-bin/
-    - /opt/apache-hive-2.3.5-bin/
-    - /opt/apache-livy-0.6.0-incubating-bin/
-    - /opt/hbase-2.2.0/
-    - /opt/nifi-1.9.2/
-    - /opt/spark-2.4.3-bin-without-hadoop/
-    - /opt/sqoop-1.4.7.bin__hadoop-2.6.0/
+    - '/opt/hadoop-{{ hadoop_pkg.version }}/'
+    - '/opt/apache-zookeeper-{{ zookeeper_pkg.version }}-bin/'
+    #    - '/opt/apache-hive--bin/'
+    - '/opt/apache-livy-{{ livy_pkg.version }}-incubating-bin/'
+    - '/opt/hbase-{{ hbase_pkg.version }}/'
+    - '/opt/nifi-{{ nifi_pkg.version }}/'
+    - '/opt/spark-{{ spark_pkg.version }}-bin-without-hadoop/'
+    - '/opt/sqoop-{{ sqoop_pkg.version }}/'
     - /etc/airflow/
-    - /etc/airflow/dags
-    - /etc/airflow/plugins
-    - /var/log/airflow
+    - /etc/airflow/dags/
+    - /etc/airflow/plugins/
+    - /var/log/airflow/
+    - /var/log/minio/
+    - /var/log/metabase/
 
 
+- name: change spark local dir permission
+  file:
+    path: /var/lib/spark/local
+    mode: '0777'
 
 - name: format namenode 
   command: bash /usr/share/tinydoop/init-hdfs.sh
@@ -321,7 +386,11 @@
 
 
 - name: change airflow ownerships
-  command: 'chown -R tinydoop:tinydoop {{ item }}'
+  file:
+    path: '{{ item }}'
+    recurse: yes
+    owner: tinydoop
+    group: tinydoop
   with_items:
     - /opt/airflow
     - /etc/airflow
@@ -333,12 +402,66 @@
     creates: /var/lib/mysql/airflow
 
 
+- name: upload minio
+  copy:
+    src: '{{ download_cache }}/minio'
+    dest: /usr/bin/minio
+    mode: 0755
+
+- name: copy minio environment
+  copy:
+    src: etc/sysconfig/minio
+    dest: /etc/sysconfig/minio
+
+
+- name: install metabase
+  copy:
+    src: '{{ download_cache }}/metabase.jar'
+    dest: /usr/share/tinydoop/metabase.jar
+
+- name: copy metabase environment
+  copy:
+    src: etc/sysconfig/metabase
+    dest: /etc/sysconfig/metabase
+
+- name: initialize postgresql
+  command: /usr/bin/postgresql-setup --initdb
+  args:
+    creates: /var/lib/pgsql/data/postgresql.conf
+
+- name: set pg_hba.conf
+  copy:
+    src: pg_hba.conf
+    dest: /var/lib/pgsql/data/pg_hba.conf
+    owner: postgres
+    group: postgres
+    mode: 0600
+
+
+- name: copy JDBC driver to sqoop
+  command: 'cp {{ item.src }} {{ item.dest }}'
+  args:
+    creates: '{{ item.dest }}'
+  with_items:
+    #    - { src: /opt/apache-hive-2.3.5-bin/lib/derby-10.10.2.0.jar,
+    #    dest: /opt/sqoop/lib/derby-10.10.2.0.jar }
+    - { src: /usr/share/java/mysql-connector-java.jar,
+        dest: /opt/sqoop/lib/mysql-connector-java.jar }
+    - { src: /usr/share/java/postgresql-jdbc.jar, 
+        dest: /opt/sqoop/lib/postgresql-jdbc.jar }
+
+
+
+
+
 - name: reload systemd
   systemd:
     name: '{{ item }}'
     state: started
+    enabled: yes
     daemon_reload: yes
   with_items:
+    - mariadb
     - zookeeper
     - namenode
     - secondarynamenode
@@ -354,6 +477,11 @@
     - livy
     - airflow-webserver
     - airflow-scheduler
+    - minio
+    - ntpd
+    - metabase
+    - cockpit.socket
+    - postgresql
 
 - name: open firewall
   firewalld:
@@ -365,6 +493,10 @@
     - 8080/tcp
     - 8090/tcp
     - 8000/tcp
+    - 9000/tcp
+    - 3000/tcp
+    - 9090/tcp
+    - 5432/tcp
 
 
 - name: create additional users

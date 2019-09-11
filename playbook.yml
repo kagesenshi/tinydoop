@@ -1,3 +1,5 @@
 - hosts: node
   roles:
-    - { role: tinydoop }
+    - { role: tinydoop,
+        download_cache: /var/tmp/tinydoop-downloads/,
+        download_packages: false }

@@ -7,6 +7,7 @@ export HADOOP_YARN_HOME=$HADOOP_HOME
 export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 export YARN_HOME=$HADOOP_HOME
 export HIVE_HOME='/opt/hive/'
+export HCAT_HOME=$HIVE_HOME/hcatalog
 export SPARK_HOME='/opt/spark/'
 export SPARK_CONF_DIR=$SPARK_HOME/conf
 export SQOOP_HOME='/opt/sqoop/'

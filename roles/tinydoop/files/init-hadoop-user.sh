@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 USER=$1
 
 hdfs dfs -stat /user/$USER
