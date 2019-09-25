@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "/opt/jupyter-pyspark-kernel/bin/python",
+    "-m",
+    "ipykernel_launcher",
+    "-f",
+    "{connection_file}"
+ ],
+ "display_name": "Py3 PySpark - HDP",
+ "language": "python",
+ "env": {
+    "HADOOP_HOME": "/usr/hdp/current/hadoop-client",
+    "HADOOP_MAPRED_HOME": "/usr/hdp/current/hadoop-mapreduce",
+    "HADOOP_YARN_HOME": "/usr/hdp/current/hadoop-yarn",
+    "HADOOP_LIBEXEC_DIR" : "/usr/hdp/current/hadoop/libexec",
+    "HDP_VERSION": "current",
+    "SPARK_HOME": "/usr/hdp/current/spark2-client/",
+    "HIVE_HOME": "/usr/hdp/current/hive-client",
+    "PYSPARK_DRIVER_PYTHON": "/opt/jupyter-pyspark-kernel/bin/python",
+    "PYSPARK_PYTHON": "./environment/bin/python",
+    "PYSPARK_SUBMIT_ARGS": "--master yarn-client --jars /usr/hdp/current/hive_warehouse_connector/hive-warehouse-connector-assembly-1.0.0.3.1.0.0-78.jar --py-files /usr/hdp/current/hive_warehouse_connector/pyspark_hwc-1.0.0.3.1.0.0-78.zip --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=./environment/bin/python --archives /opt/jupyter-pyspark-kernel.tar.gz#environment pyspark-shell"
+  }
+}

@@ -1,0 +1,6 @@
+---
+# vars file for jupyterhub-pyspark-kernel
+install_kernel: True
+jupyter_kernel_dir: /opt/jupyterhub/share/jupyter/kernels/
+reinitialize: False
+additional_pypackages: []

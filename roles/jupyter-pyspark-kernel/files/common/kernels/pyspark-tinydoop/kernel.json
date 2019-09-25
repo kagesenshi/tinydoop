@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/usr/bin/tinydoop_start.sh",
+    "/opt/jupyter-pyspark-kernel/bin/python",
+    "-m",
+    "ipykernel_launcher",
+    "-f",
+    "{connection_file}"
+ ],
+ "display_name": "Py3 PySpark - Tinydoop",
+ "language": "python",
+ "env": {
+    "PYSPARK_DRIVER_PYTHON": "/opt/jupyter-pyspark-kernel/bin/python",
+    "PYSPARK_PYTHON": "./environment/bin/python",
+    "PYSPARK_SUBMIT_ARGS": "--master yarn-client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=./environment/bin/python --archives /opt/jupyter-pyspark-kernel.tar.gz#environment pyspark-shell"
+  }
+}

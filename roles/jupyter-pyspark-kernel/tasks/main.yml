@@ -1,0 +1,228 @@
+---
+# tasks file for jupyterhub-pyspark-kernel
+#
+- name: Set Default Facts
+  set_fact:
+    hadoop_distro: none
+
+- name: Set Distro Facts (Fedora)
+  set_fact:
+    distro_family: fedora
+  when: ansible_facts['distribution'] == "Fedora"
+
+- name: Set Distro Facts (CentOS/RHEL)
+  set_fact:
+    distro_family: el
+  when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"
+
+
+- name: Check if HDP
+  stat:
+    path: /usr/hdp/current
+  register: is_hdp
+
+- name: Check if Tinydoop
+  stat:
+    path: /usr/share/tinydoop
+  register: is_tinydoop
+
+- name: set Hadoop distro fact (HDP)
+  set_fact:
+    hadoop_distro: hdp
+  when: is_hdp.stat.exists == True
+
+- name: set Hadoop distro fact (Tinydoop)
+  set_fact:
+    hadoop_distro: tinydoop
+  when: is_tinydoop.stat.exists == True
+
+
+
+# === Setup dependencies ===
+
+
+# === Setup kernel environment ===
+#
+- name: Stop JupyterHub
+  systemd:
+    name: jupyterhub
+    state: stopped
+  when: reinitialize == True
+
+- name: Remove existing virtualenv
+  file: 
+    path: /opt/jupyter-pyspark-kernel/
+    state: absent
+  when: reinitialize == True
+
+- name: Setup kernel virtualenv (CentOS/RHEL)
+  command: virtualenv-3 /opt/jupyter-pyspark-kernel/
+  args:
+    creates: /opt/jupyter-pyspark-kernel/bin/python
+  when: distro_family == 'el'
+  
+- name: Setup kernel virtualenv (Fedora)
+  command: virtualenv --python /usr/bin/python3.7 /opt/jupyter-pyspark-kernel/
+  args:
+    creates: /opt/jupyter-pyspark-kernel/bin/python
+  when: distro_family == 'fedora'
+
+- name: Setup base python packages
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items:
+    - { package: ipykernel,
+        version: "5.1.2",
+        pymodule: ipykernel }
+    - { package: bokeh,
+        version: '1.3.4',
+        pymodule: bokeh }
+    - { package: altair,
+        version: '3.2.0',
+        pymodule: altair }
+    - { package: vega-datasets,
+        version: '0.7.0',
+        pymodule: vega_datasets }
+    - { package: pydoop,
+        version: '2.0.0',
+        pymodule: pydoop }
+    - { package: Cython,
+        version: '0.29.13',
+        pymodule: Cython }
+    - { package: keyring,
+        version: '19.2.0',
+        pymodule: keyring }
+    - { package: keyrings.cryptfile,
+        version: '1.3.4',
+        pymodule: keyrings/cryptfile }
+
+- name: Setup Optimus (Local)
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items:
+    - { package: optimuspyspark,
+        version: '2.2.7',
+        pymodule: optimus }
+  when: hadoop_distro == 'none'
+
+- name: Setup Optimus (Tinydoop)
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items:
+    - { package: optimuspyspark,
+        version: '2.2.7',
+        pymodule: optimus }
+  when: hadoop_distro == 'tinydoop'
+
+- name: Setup Optimus (HDP)
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items:
+    - { package: optimuspyspark,
+        version: '2.1.3',
+        pymodule: optimus }
+  when: hadoop_distro == 'hdp'
+
+
+- name: Setup additional python packages
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items: "{{ additional_pypackages }}"
+
+- name: Prep Hadoop Spark Package (Tinydoop)
+  command: '/opt/jupyter-pyspark-kernel/bin/python setup.py sdist'
+  args:
+    chdir: '/opt/spark/python'
+    creates: /opt/spark/python/dist/pyspark-2.4.4.tar.gz
+  when: hadoop_distro == 'tinydoop'
+
+- name: Prep Hadoop Spark Package (HDP)
+  command: '/opt/jupyter-pyspark-kernel/bin/python setup.py sdist'
+  args:
+    chdir: '/usr/hdp/current/spark2-client/python'
+    creates: /usr/hdp/current/spark2-client/python/dist/pyspark-2.3.1.dev0.tar.gz
+  when: hadoop_distro == 'hdp'
+
+- name: Override Hadoop Package (Tinydoop)
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install /opt/spark/python/dist/pyspark-2.4.4.tar.gz"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/pyspark-2.4.1.dist-info"
+  when: hadoop_distro == 'tinydoop'
+
+- name: Override Hadoop Package (HDP)
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install /usr/hdp/current/spark2-client/python/dist/pyspark-2.3.1.dev0.tar.gz"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/pyspark-2.3.1.dev0.dist-info"
+  when: hadoop_distro == "hdp"
+
+- name: Remove existing VirtualEnv prep files
+  file: 
+    path: /var/tmp/jupyter-pyspark-kernel/
+    state: absent
+
+- name: Prep VirtualEnv for packaging
+  copy:
+    src: /opt/jupyter-pyspark-kernel
+    dest: /var/tmp/
+    remote_src: yes
+
+- name: Make Kernel VirtualEnv relocatable (CentOS/RHEL)
+  command: "virtualenv-3 --relocatable /var/tmp/jupyter-pyspark-kernel/"
+  when: hadoop_distro != "none" and distro_family == "el"
+
+- name: Make Kernel VirtualEnv relocatable (Fedora)
+  command: "virtualenv --relocatable /var/tmp/jupyter-pyspark-kernel/"
+  when: hadoop_distro != "none" and distro_family == "fedora"
+
+- name: Generate VirtualEnv package
+  archive:
+    path: /var/tmp/jupyter-pyspark-kernel/
+    dest: /opt/jupyter-pyspark-kernel.tar
+    format: tar
+    remove: yes
+  when: hadoop_distro != "none"
+
+- name: Remove VirtualEnv prep files
+  file: 
+    path: /var/tmp/jupyter-pyspark-kernel/
+    state: absent
+
+- name: Remove existing compressed VirtualEnv package
+  file:
+    path: /opt/jupyter-pyspark-kernel.tar.gz
+    state: absent
+
+- name: Compress VirtualEnv package
+  archive:
+    path: /opt/jupyter-pyspark-kernel.tar
+    dest: /opt/jupyter-pyspark-kernel.tar.gz
+    format: gz
+    remove: yes
+  when: hadoop_distro != "none"
+
+# Install kernel configuration
+
+- name: Install PySpark Local Kernel
+  copy: 
+    src: common/kernels/pyspark-local
+    dest: '{{ jupyter_kernel_dir }}'
+  when: install_kernel == True
+
+- name: Install PySpark Hadoop Kernel
+  copy: 
+    src: "common/kernels/pyspark-{{ hadoop_distro }}"
+    dest: '{{ jupyter_kernel_dir }}'
+  when: install_kernel == True and hadoop_distro != "none"
+
+- name: Reload JupyterHub SystemD
+  systemd:
+    name: jupyterhub
+    state: restarted
+  when: install_kernel == True
+
+

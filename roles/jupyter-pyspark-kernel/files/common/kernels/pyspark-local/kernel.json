@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/opt/jupyter-pyspark-kernel/bin/python",
+    "-m",
+    "ipykernel_launcher",
+    "-f",
+    "{connection_file}"
+ ],
+ "display_name": "Py3 PySpark - Local",
+ "language": "python"
+}
