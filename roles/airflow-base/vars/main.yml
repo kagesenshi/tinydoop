@@ -1,0 +1,24 @@
+---
+# vars file for hadoop-airflow
+install_database: True
+reinstall_database: False
+airflow_load_examples: True
+airflow_timezone: Asia/Kuala_Lumpur
+airflow_home: /etc/airflow/
+airflow_user: airflow
+airflow_group: airflow
+airflow_dburi: mysql://airflow:password@localhost:3306/airflow
+airflow_fernet_key: '4l69HlyZHe0__rhXPEJHTyHDtuoUjL6DNOuluHO2Oow='
+airflow_hostname: localhost
+airflow_listen_address: 0.0.0.0
+airflow_port: 8080
+airflow_smtp_host: localhost
+airflow_smtp_port: 25
+airflow_smtp_from: airflow@example.com
+airflow_smtp_ssl: False
+airflow_smtp_starttls: True
+airflow_executor: LocalExecutor
+
+# celery
+airflow_celery_broker_url: sqla+mysql://airflow:airflow@localhost:3306/airflow
+airflow_celery_result_backend: db+mysql://airflow:airflow@localhost:3306/airflow

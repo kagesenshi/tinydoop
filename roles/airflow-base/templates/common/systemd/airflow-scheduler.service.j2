@@ -1,0 +1,19 @@
+[Unit]
+Description=Airflow Scheduler
+After=network.target 
+# Wants=namenode.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/sysconfig/airflow
+ExecStart=/opt/airflow/bin/airflow scheduler
+StandardOutput=syslog
+StandardError=syslog
+Restart=on-failure
+RestartSec=5s
+User={{ airflow_user }}
+Group={{ airflow_group }}
+
+[Install]
+WantedBy=multi-user.target
+

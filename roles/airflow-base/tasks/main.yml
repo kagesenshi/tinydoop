@@ -1,0 +1,167 @@
+---
+# tasks file for hadoop-airflow
+- name: Setup dependencies
+  yum:
+    name:
+      - python3
+      - python3-devel
+      - python3-pip
+      - python3-virtualenv
+      - gcc
+      - gcc-c++
+      - cyrus-sasl-devel
+      - krb5-devel
+      - postgresql-devel
+      - mariadb-devel
+      - dbus-tools
+      - libtirpc-devel
+      - polkit
+      - libxcrypt-compat
+
+- name: Initialize virtualenv (Fedora)
+  command: virtualenv --python /usr/bin/python3.7 /opt/airflow/
+  args:
+    creates: /opt/airflow/bin/python
+
+- name: Copy requirements.txt
+  copy:
+    src: common/requirements.txt
+    dest: /opt/airflow/requirements.txt
+
+- name: Install Airflow
+  command: /opt/airflow/bin/pip install -r /opt/airflow/requirements.txt
+  args:
+    creates: /opt/airflow/bin/airflow
+
+- name: Create Airflow directories
+  file:
+    path: '{{ item }}'
+    state: directory
+  with_items:
+    - '{{ airflow_home }}'
+    - /var/lib/airflow/
+
+# ======== SystemD ==========
+
+# uses: airflow_home
+- name: Copy Airflow EnvironmentFile
+  template:
+    src: common/etc/sysconfig/airflow.j2
+    dest: /etc/sysconfig/airflow
+
+# uses: most variables
+- name: Copy Airflow config
+  template:
+    src: common/etc/airflow/airflow.cfg.j2
+    dest: /etc/airflow/airflow.cfg
+    variable_start_string: '<%'
+    variable_end_string: '%>'
+    block_start_string: '[%#'
+    block_end_string: '#%]'
+
+# uses: airflow_user, airflow_group
+- name: Install Airflow SystemD Services
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: common/systemd/airflow-webserver.service.j2,
+        dest: /usr/lib/systemd/system/airflow-webserver.service }
+    - { src: common/systemd/airflow-scheduler.service.j2,
+        dest: /usr/lib/systemd/system/airflow-scheduler.service }
+
+- name: Create Airflow Group
+  group:
+    name: '{{ airflow_group }}'
+    state: present
+
+
+- name: Create Airflow User
+  user:
+    name: '{{ airflow_user }}'
+    group: '{{ airflow_group }}'
+    home: '{{ airflow_home }}'
+    create_home: no
+    system: yes
+    state: present
+
+
+- name: Change airflow ownerships
+  file:
+    path: '{{ item }}'
+    recurse: yes
+    owner: '{{ airflow_user }}'
+    group: '{{ airflow_group }}'
+  with_items:
+    - '{{ airflow_home }}'
+    - '{{ airflow_home }}/dags/'
+    - '{{ airflow_home }}/plugins/'
+    - /var/lib/airflow/
+    - /var/log/airflow/
+
+
+- name: Setup MariaDB
+  yum:
+    name:
+      - mariadb-server
+      - python3-mysql
+  when: install_database == True
+
+- name: Set MariaDB config
+  copy:
+    content: "[mysqld]\nexplicit_defaults_for_timestamp = 1"
+    dest: /etc/my.cnf.d/explicit-defaults-for-timestamp.cnf
+
+- name: Start Mariadb
+  systemd:
+    name: mariadb
+    state: restarted
+    enabled: yes
+  when: install_database == True
+
+- name: Delete Airflow database
+  mysql_db:
+    name: airflow
+    state: absent
+  when: reinstall_database == True
+
+- name: Create Airflow database
+  mysql_db:
+    name: airflow
+    state: present
+  when: install_database == True
+
+- name: Create Airflow database user
+  mysql_user:
+    name: airflow
+    password: password
+    priv: 'airflow.*:ALL'
+    state: present
+  when: install_database == True
+
+- name: Initialize Airflow 
+  command: /opt/airflow/bin/airflow initdb
+  args:
+    creates: /var/lib/mysql/airflow/dag.ibd
+  environment:
+    AIRFLOW_CONFIG: '{{ airflow_home }}/airflow.cfg'
+    AIRFLOW_HOME: '{{ airflow_home }}'
+
+
+- name: Open Firewall Port
+  firewalld:
+    port: '{{ ansible_port }}/tcp'
+    state: enabled
+    permanent: yes
+
+- name: Reload SystemD
+  systemd:
+    name: '{{ item }}'
+    daemon_reload: yes
+    state: restarted
+  with_items:
+    - airflow-webserver
+    - airflow-scheduler
+    - firewalld
+
+
