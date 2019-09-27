@@ -18,6 +18,6 @@
     "HIVE_HOME": "/usr/hdp/current/hive-client",
     "PYSPARK_DRIVER_PYTHON": "/opt/jupyter-pyspark-kernel/bin/python",
     "PYSPARK_PYTHON": "./environment/bin/python",
-    "PYSPARK_SUBMIT_ARGS": "--master yarn-client --jars /usr/hdp/current/hive_warehouse_connector/hive-warehouse-connector-assembly-1.0.0.3.1.0.0-78.jar --py-files /usr/hdp/current/hive_warehouse_connector/pyspark_hwc-1.0.0.3.1.0.0-78.zip --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=./environment/bin/python --archives /opt/jupyter-pyspark-kernel.tar.gz#environment pyspark-shell"
+    "PYSPARK_SUBMIT_ARGS": "--master yarn-client --jars /usr/hdp/current/hive_warehouse_connector/hive-warehouse-connector-assembly-1.0.0.3.1.0.0-78.jar --py-files /usr/hdp/current/hive_warehouse_connector/pyspark_hwc-1.0.0.3.1.0.0-78.zip --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=./environment/bin/python --archives /opt/jupyter-pyspark-kernel.tar.gz#environment -conf spark.dynamicAllocation.enabled=true --conf spark.dynamicAllocation.schedulerBacklogTimeout=30s --conf spark.dynamicAllocation.cachedExecutorIdleTimeout=3600s --conf spark.app.name=jupyter-notebook pyspark-shell"
   }
 }
