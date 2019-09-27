@@ -40,6 +40,11 @@
 
 # === Setup dependencies ===
 
+- name: Setup system dependencies (Fedora)
+  yum:
+    name:
+      - libtirpc-devel
+  when: distro_family == 'fedora'
 
 # === Setup kernel environment ===
 #
@@ -148,13 +153,13 @@
     creates: /usr/hdp/current/spark2-client/python/dist/pyspark-2.3.1.dev0.tar.gz
   when: hadoop_distro == 'hdp'
 
-- name: Override Hadoop Package (Tinydoop)
+- name: Install Hadoop PySpark Package (Tinydoop)
   command: "/opt/jupyter-pyspark-kernel/bin/pip install /opt/spark/python/dist/pyspark-2.4.4.tar.gz"
   args:
     creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/pyspark-2.4.1.dist-info"
   when: hadoop_distro == 'tinydoop'
 
-- name: Override Hadoop Package (HDP)
+- name: Install Hadoop PySpark Package (HDP)
   command: "/opt/jupyter-pyspark-kernel/bin/pip install /usr/hdp/current/spark2-client/python/dist/pyspark-2.3.1.dev0.tar.gz"
   args:
     creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/pyspark-2.3.1.dev0.dist-info"
@@ -164,20 +169,22 @@
   file: 
     path: /var/tmp/jupyter-pyspark-kernel/
     state: absent
+  when: repackage_virtualenv == True
 
 - name: Prep VirtualEnv for packaging
   copy:
     src: /opt/jupyter-pyspark-kernel
     dest: /var/tmp/
     remote_src: yes
+  when: repackage_virtualenv == True
 
 - name: Make Kernel VirtualEnv relocatable (CentOS/RHEL)
   command: "virtualenv-3 --relocatable /var/tmp/jupyter-pyspark-kernel/"
-  when: hadoop_distro != "none" and distro_family == "el"
+  when: repackage_virtualenv == True and hadoop_distro != "none" and distro_family == "el"
 
 - name: Make Kernel VirtualEnv relocatable (Fedora)
   command: "virtualenv --relocatable /var/tmp/jupyter-pyspark-kernel/"
-  when: hadoop_distro != "none" and distro_family == "fedora"
+  when: repackage_virtualenv == True and hadoop_distro != "none" and distro_family == "fedora"
 
 - name: Generate VirtualEnv package
   archive:
@@ -185,17 +192,19 @@
     dest: /opt/jupyter-pyspark-kernel.tar
     format: tar
     remove: yes
-  when: hadoop_distro != "none"
+  when: repackage_virtualenv == True and hadoop_distro != "none"
 
 - name: Remove VirtualEnv prep files
   file: 
     path: /var/tmp/jupyter-pyspark-kernel/
     state: absent
+  when: repackage_virtualenv == True
 
 - name: Remove existing compressed VirtualEnv package
   file:
     path: /opt/jupyter-pyspark-kernel.tar.gz
     state: absent
+  when: repackage_virtualenv == True
 
 - name: Compress VirtualEnv package
   archive:
@@ -203,7 +212,7 @@
     dest: /opt/jupyter-pyspark-kernel.tar.gz
     format: gz
     remove: yes
-  when: hadoop_distro != "none"
+  when: repackage_virtualenv == True and hadoop_distro != "none"
 
 # Install kernel configuration
 
