@@ -1,4 +1,4 @@
 ---
 # vars file for hadoop-jupyter
-rebuild_assets: True
+rebuild_assets: False
 reinitialize: False
