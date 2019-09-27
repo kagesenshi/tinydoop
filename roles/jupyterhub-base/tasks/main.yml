@@ -3,7 +3,7 @@
 #
 - fail: 
     msg: 'CentOS/RHEL != 7 is not supported'
-  when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat") and ansible_facts['distribution_major_version']|int == 7
+  when: (ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat") and ansible_facts['distribution_major_version']|int != 7
 
 - fail: 
     msg: 'Fedora < 30 is not supported'
