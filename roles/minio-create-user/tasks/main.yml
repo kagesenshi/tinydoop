@@ -1,0 +1,31 @@
+---
+# tasks file for minio-createuser
+
+- name: Check if current user have mc configured
+  stat:
+    path: '/{{ ansible_user_id }}/.mc/config.json'
+  register: mc_config
+
+- fail:
+    msg: Unable to find minio config
+  when: mc_config.stat.exists == False
+
+- name: Create user
+  command: 'mc admin user add {{ minio_host }} {{ minio_user_access_key }} {{ minio_user_secret_key }}'
+
+- name: Assign user to group
+  command: 'mc admin group add {{ minio_host }} {{ minio_user_bucket }} {{ minio_user_access_key }}'
+
+- name: Create bucket for user
+  command: 'mc mb {{ minio_host }}/{{ minio_user_bucket }}'
+
+- name: Create bucket permission JSON
+  template:
+    src: bucket-admin.json.j2
+    dest: '/tmp/{{ minio_user_bucket}}-admin.json'
+
+- name: Register bucket permission
+  command: 'mc admin policy add {{ minio_host }} {{ minio_user_bucket }}-admin /tmp/{{ minio_user_bucket}}-admin.json'
+
+- name: Assign permission to group
+  command: 'mc admin policy set {{ minio_host }} {{ minio_user_bucket }}-admin group={{ minio_user_bucket }}'
