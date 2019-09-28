@@ -1,0 +1,13 @@
+---
+# vars file for minio-base
+minio_bin:
+  filename: minio
+  uri: https://dl.min.io/server/minio/release/linux-amd64/minio
+
+minio_client_bin:
+  filename: mc
+  uri: https://dl.min.io/client/mc/release/linux-amd64/mc
+
+minio_access_key: minioaccess
+minio_secret_key: miniosecret
+download_cache: /var/tmp/ansible-role-minio/

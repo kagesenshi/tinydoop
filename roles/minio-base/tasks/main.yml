@@ -1,0 +1,100 @@
+---
+# tasks file for minio-base
+#
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Minio Binaries
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+  with_items:
+    - '{{ minio_bin }}'
+    - '{{ minio_client_bin }}'
+
+- name: Create Minio Group
+  group:
+    name: minio
+    state: present
+
+- name: Create Minio User
+  user:
+    name: minio
+    group: minio
+    home: /var/lib/minio/
+    create_home: no
+    system: yes
+    state: present
+
+- name: Setup Directories
+  file:
+    name: "{{ item }}"
+    state: directory
+    owner: minio
+    group: minio
+  with_items:
+    - /var/lib/minio/
+    - /var/log/minio/
+
+
+- name: Upload Minio Binary
+  copy:
+    src: '{{ download_cache }}/minio'
+    dest: /usr/bin/minio
+    mode: 0755
+
+- name: Upload Minio Client Binary
+  copy:
+    src: '{{ download_cache }}/mc'
+    dest: /usr/bin/mc
+    mode: 0755
+
+- name: Copy Minio EnvironmentFile
+  template:
+    src: etc/sysconfig/minio.j2
+    dest: /etc/sysconfig/minio
+    owner: minio
+    group: minio
+
+- name: Create Default Bucket
+  file:
+    path: /var/lib/minio/default
+    state: directory
+    owner: minio
+    group: minio
+
+- name: Upload SystemD Service
+  copy:
+    src: systemd/minio.service
+    dest: /usr/lib/systemd/system/
+
+- name: Start Minio
+  systemd:
+    name: '{{ item }}'
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  with_items:
+    - minio
+
+- name: Create minio config directory for user root
+  file:
+    path: /root/.mc/
+    state: directory
+
+- name: Configure minio client for user root
+  template:
+    src: mc-config.json.j2
+    dest: /root/.mc/config.json
+
+- name: Open Firewall Port
+  firewalld:
+    port: '9000/tcp'
+    state: enabled
+    immediate: yes
+    permanent: yes
+
