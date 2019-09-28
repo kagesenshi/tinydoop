@@ -1,0 +1,9 @@
+---
+# vars file for hadoop-base
+
+hadoop_pkg:
+  version: 3.2.0
+  filename: hadoop-3.2.0.tar.gz
+  uri: https://www-eu.apache.org/dist/hadoop/common/hadoop-3.2.0/hadoop-3.2.0.tar.gz
+  checksum: md5:5AC41982DC50C96C897C70758FC54CA3
+

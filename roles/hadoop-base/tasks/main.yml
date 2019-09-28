@@ -1,0 +1,52 @@
+---
+# tasks file for hadoop-base
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ hadoop_pkg }}'
+
+- name: Setup dependencies
+  dnf:
+    name:
+      - java-1.8.0-openjdk-devel
+      - polkit
+
+- name: Create Hadoop Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /var/lib/hadoop/
+    - /var/log/hadoop/
+
+- name: Extract Archives
+  unarchive: 
+    src: "{{ item.src }}"
+    dest: "/opt/kdp"
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: '{{ download_cache }}/{{ hadoop_pkg.filename }}',
+        creates: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}' }
+
+- name: Create Symlinks
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+    - { src: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}', dest: /opt/hadoop }
+
+- name: Install Environment Profile
+  template:
+    src: etc/profile.d/kdp-0-hadoop.sh.j2
+    dest: /etc/profile.d/kdp-0-hadoop.sh
