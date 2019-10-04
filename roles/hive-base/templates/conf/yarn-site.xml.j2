@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License. See accompanying LICENSE file.
+-->
+<configuration>
+
+   <!-- Site specific YARN configuration properties -->
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>{{ yarn_rm_host }}</value>
+     </property>
+
+    <property>
+        <name>yarn.resourcemanager.address</name>
+        <value>{{ yarn_rm_host }}:{{ yarn_rm_port }}</value>
+     </property>
+
+    <property>
+        <name>yarn.resourcemanager.scheduler.address</name>
+        <value>{{ yarn_rm_host }}:{{ yarn_rm_scheduler_port }}</value>
+     </property>
+
+    <property>
+        <name>yarn.resourcemanager.webapp.address</name>
+        <value>{{ yarn_rm_host }}:{{ yarn_rm_webapp_port }}</value>
+     </property>
+    <property>
+        <name>yarn.resourcemanager.webapp.https.address</name>
+        <value>{{ yarn_rm_host }}:{{ yarn_rm_webapp_https_port }}</value>
+     </property>
+    <property>
+        <name>yarn.resourcemanager.resource-tracker.address</name>
+        <value>{{ yarn_rm_host }}:{{ yarn_rm_resource_tracker_port }}</value>
+     </property>
+
+    <property>
+        <name>yarn.resourcemanager.admin.address</name>
+        <value>{{ yarn_rm_host }}:{{ yarn_rm_admin_port }}</value>
+     </property>
+
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+     </property>
+     <property>
+        <name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name>
+        <value>98.5</value>
+     </property>
+     <property>
+        <name>yarn.nodemanager.vmem-check-enabled</name>
+        <value>false</value>
+     </property>
+  <property>
+      <name>yarn.log-aggregation-enable</name>
+      <value>true</value>
+  </property>
+  <property>
+     <name>yarn.nodemanager.remote-app-log-dir</name>
+     <value>/app-logs</value>
+  </property>
+  <property>
+      <name>yarn.nodemanager.remote-app-log-dir-suffix</name>
+      <value>logs</value>
+   </property>
+
+   <property>
+      <name>yarn.resourcemanager.scheduler.monitor.enable</name>
+      <value>true</value>
+   </property>
+
+   <property>
+      <name>yarn.log-aggregation-enable</name>
+      <value>true</value>
+   </property>
+
+  <property>
+    <name>yarn.log.server.url</name>
+    <value>http://{{ yarn_rm_host }}:{{ yarn_rm_mrjobhistory_port }}/jobhistory/logs</value>
+ </property>
+
+   <property>
+      <name>yarn.timeline-service.enabled</name>
+      <value>false</value>
+   </property>
+
+   <property>
+      <name>yarn.timeline-service.hostname</name>
+      <value>{{ yarn_rm_host }}</value>
+   </property>
+
+   <property>
+      <name>yarn.timeline-service.reader.webapp.address</name>
+      <value>{{ yarn_rm_host }}:{{ yarn_rm_timeline_port }}</value>
+   </property>
+
+   <property>
+      <name>yarn.timeline-service.reader.webapp.https.address</name>
+      <value>{{ yarn_rm_host }}:{{ yarn_rm_timeline_https_port }}</value>
+   </property>
+
+
+   <property>
+      <name>hadoop.tmp.dir</name>
+      <value>/var/lib/hive/tmp/</value>
+   </property>
+
+   <property>
+      <name>yarn.log.dir</name>
+      <value>/var/log/hive/</value>
+   </property>
+
+   <property>
+      <name>yarn.webapp.api-service.enable</name>
+      <value>true</value>
+   </property>
+
+   <property>
+      <name>yarn.webapp.ui2.enable</name>
+      <value>true</value>
+   </property>
+  </configuration>

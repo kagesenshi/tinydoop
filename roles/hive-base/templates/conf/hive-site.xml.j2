@@ -1,0 +1,88 @@
+<configuration>
+
+   <property>
+      <name>fs.defaultFS</name>
+      <value>s3a://{{ s3a_bucket }}</value>
+   </property>
+
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>{{ s3a_endpoint }}</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>{{ s3_access_key }}</value>
+ </property>
+
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>{{ s3_secret_key }}</value>
+  </property>
+
+
+   <property>
+     <name>fs.s3a.path.style.access</name>
+     <value>true</value>
+   </property>
+
+   <property>
+     <name>fs.s3a.impl</name>
+     <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+   </property>
+
+   <property>
+      <name>javax.jdo.option.ConnectionURL</name>
+      <value>jdbc:{{ hive_metastore_driver }}://{{ hive_metastore_host }}:{{ hive_metastore_port }}/{{ hive_metastore_db }}</value>
+   </property>
+   <property>
+      <name>javax.jdo.option.ConnectionDriverName</name>
+      <value>{{ hive_metastore_driver_class }}</value>
+   </property>
+   <property>
+      <name>javax.jdo.option.ConnectionUserName</name>
+      <value>{{ hive_metastore_user }}</value>
+   </property>
+   <property>
+      <name>javax.jdo.option.ConnectionPassword</name>
+      <value>{{ hive_metastore_password }}</value>
+   </property>
+
+  <property>
+    <name>hive.zookeeper.quorum</name>
+    <value>{{ zookeeper_quorum }}</value>
+  </property>
+
+    <!-- LLAP -->
+
+   <property>
+        <name>hive.llap.io.enabled</name>
+        <value>true</value>
+    </property>
+
+   <property>
+        <name>hive.server2.tez.interactive.queue</name>
+        <value>default</value>
+    </property>
+
+   <property>
+        <name>hive.llap.hdfs.package.dir</name>
+        <value>/llap/</value>
+    </property>
+
+   <property>
+        <name>hive.llap.execution.mode</name>
+        <value>all</value>
+    </property>
+
+   <property>
+        <name>hive.llap.daemon.service.hosts</name>
+        <value>@{{ hive_llap_instance_name }}</value>
+    </property>
+
+   <property>
+        <name>hive.llap.io.use.lrfu</name>
+        <value>true</value>
+    </property>
+
+</configuration>

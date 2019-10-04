@@ -81,12 +81,14 @@
   with_items:
     - minio
 
-- name: Create minio config directory for user root
+- name: Create minio config directory for current user
   file:
-    path: /root/.mc/
+    path: '/{{ ansible_user_id }}/.mc/'
     state: directory
+    owner: '{{ ansible_user_id|int }}'
+    group: '{{ ansible_user_gid|int }}'
 
-- name: Configure minio client for user root
+- name: Configure minio client for current user
   template:
     src: mc-config.json.j2
     dest: /root/.mc/config.json

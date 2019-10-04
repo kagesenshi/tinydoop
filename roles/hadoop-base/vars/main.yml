@@ -7,3 +7,9 @@ hadoop_pkg:
   uri: https://www-eu.apache.org/dist/hadoop/common/hadoop-3.2.0/hadoop-3.2.0.tar.gz
   checksum: md5:5AC41982DC50C96C897C70758FC54CA3
 
+zookeeper_pkg:
+  version: 3.5.5
+  filename: apache-zookeeper-3.5.5-bin.tar.gz
+  uri: https://www-eu.apache.org/dist/zookeeper/zookeeper-3.5.5/apache-zookeeper-3.5.5-bin.tar.gz
+  checksum: md5:a5b37a15fad4ac89f15b5072b94a2d1c.
+

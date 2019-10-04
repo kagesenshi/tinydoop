@@ -1,0 +1,8 @@
+#!/bin/bash
+  
+source /etc/profile.d/kdp-0-hadoop.sh
+HADOOP_CONF_DIR=/etc/hive/
+HADOOP_LOG_DIR=/var/log/hive/
+HIVE_CONF_DIR=/etc/hive/
+TEZ_CONF_DIR=/etc/hive/
+exec $@

@@ -14,12 +14,25 @@
     checksum: '{{ item.checksum }}'
   with_items:
     - '{{ hadoop_pkg }}'
+    - '{{ zookeeper_pkg }}'
 
 - name: Setup dependencies
   dnf:
     name:
+      - python3
+      - python-unversioned-command
       - java-1.8.0-openjdk-devel
+      - mysql-connector-java
+      - postgresql-jdbc
+      - grep
       - polkit
+
+- name: Create KDP Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /opt/kdp/
 
 - name: Create Hadoop Directories
   file:
@@ -37,6 +50,8 @@
   with_items:
     - { src: '{{ download_cache }}/{{ hadoop_pkg.filename }}',
         creates: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}' }
+    - { src: '{{ download_cache }}/apache-zookeeper-{{ zookeeper_pkg.version }}-bin.tar.gz',
+        creates: '/opt/kdp/apache-zookeeper-{{ zookeeper_pkg.version }}-bin' }
 
 - name: Create Symlinks
   file:
@@ -45,8 +60,25 @@
     state: link
   with_items:
     - { src: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}', dest: /opt/hadoop }
+    - { src: '/opt/kdp/apache-zookeeper-{{ zookeeper_pkg.version }}-bin/',
+          dest: /opt/zookeeper }
+
+- name: Copy AWS Jars
+  copy:
+    src: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}/share/hadoop/tools/lib/{{ item }}'
+    dest: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}/share/hadoop/common/lib/'
+    remote_src: yes
+  with_items:
+    - 'hadoop-aws-{{ hadoop_pkg.version }}.jar'
+    - aws-java-sdk-bundle-1.11.375.jar
 
 - name: Install Environment Profile
   template:
     src: etc/profile.d/kdp-0-hadoop.sh.j2
     dest: /etc/profile.d/kdp-0-hadoop.sh
+
+- name: Install KDP enable script
+  template:
+    src: bin/kdp-enable
+    dest: /usr/bin/kdp-enable
+    mode: 0755

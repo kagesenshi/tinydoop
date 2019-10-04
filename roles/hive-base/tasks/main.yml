@@ -1,0 +1,223 @@
+---
+# tasks file for hive-master
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ hive_pkg }}'
+    - '{{ tez_pkg }}'
+
+- name: Check For Hadoop Install
+  stat:
+    path: /opt/hadoop/bin/hadoop
+  register: has_hadoop
+
+- fail: 
+    msg: Missing /opt/hadoop/
+  when: has_hadoop.stat.exists == False
+
+
+- name: Setup dependencies
+  dnf:
+    name:
+      - python3-PyMySQL
+      - mariadb-server
+
+
+- name: Create Hive Group
+  group:
+    name: hive
+    state: present
+
+- name: Create Hive User
+  user:
+    name: hive
+    group: hive
+    home: /var/lib/hive/
+    create_home: no
+    system: yes
+    state: present
+
+- name: Create Hive Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: hive
+    group: hive
+  with_items:
+    - /var/log/hive/
+    - /var/lib/hive/
+    - /var/lib/hive/tmp/
+    - /etc/hive/
+
+- name: Extract Archives
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "/opt/kdp"
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: '{{ download_cache }}/{{ hive_pkg.filename }}',
+        creates: '/opt/kdp/apache-hive-{{ hive_pkg.version }}-bin' }
+    - { src: '{{ download_cache }}/{{ tez_pkg.filename }}',
+        creates: '/opt/kdp/apache-tez-{{ tez_pkg.version }}-bin' }
+
+
+- name: Create Symlinks
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+    - { src: '/opt/kdp/apache-hive-{{ hive_pkg.version }}-bin', dest: /opt/hive }
+    - { src: '/opt/kdp/apache-tez-{{ tez_pkg.version }}-bin', dest: /opt/tez }
+
+
+- name: Install Hadoop and Hive Configurations
+  template:
+    src: 'conf/{{ item }}.j2'
+    dest: '/etc/hive/{{ item }}'
+    owner: hive
+    group: hive
+  with_items:
+    - hive-env.sh
+    - yarn-env.sh
+    - hadoop-env.sh
+    - hdfs-site.xml
+    - yarn-site.xml
+    - capacity-scheduler.xml
+    - core-site.xml
+    - mapred-site.xml
+    - hive-default.xml
+    - hive-site.xml
+    - tez-site.xml
+    - zoo.cfg
+    - log4j.properties
+
+- name: Install Hive EnvironmentFile
+  template:
+    src: sysconfig/hiveserver2.j2
+    dest: /etc/sysconfig/hiveserver2
+
+- name: Install KDP Hive enable script
+  template:
+    src: bin/kdp-hive-enable
+    dest: /usr/bin/kdp-hive-enable
+    mode: 0755
+
+- name: Check if TEZ lib already uploaded
+  shell: '/usr/bin/kdp-hive-enable /opt/hadoop/bin/hdfs dfs -stat /tez.tar.gz'
+  ignore_errors: yes
+  register: has_tez
+
+- name: Upload TEZ lib
+  command: '/usr/bin/kdp-hive-enable /opt/hadoop/bin/hdfs dfs -put /opt/tez/share/tez.tar.gz /'
+  when: has_tez['rc'] != 0
+
+
+- name: Start MariaDB
+  systemd:
+    name: mariadb
+    state: started
+
+
+- name: Create Metastore 
+  mysql_db:
+    name: '{{ hive_metastore_db }}'
+    state: present
+
+- name: Create Metastore User
+  mysql_user:
+    name: '{{ hive_metastore_user }}'
+    password: '{{ hive_metastore_password }}'
+    priv: '{{ hive_metastore_db }}.*:ALL'
+
+- fail:
+    msg: '{{ hive_metastore_driver }} is not yet a supported metastore driver in this ansible role'
+  when: hive_metastore_driver != "mysql"
+
+- name: Initialize Hive Metastore
+  command: '/usr/bin/kdp-hive-enable /opt/hive/bin/schematool -dbType {{ hive_metastore_driver }} -initSchema'
+  args:
+    creates: '/var/lib/mysql/hive_metastore/DBS.ibd'
+  when: hive_metastore_driver == "mysql"
+
+- name: Initialize LLAP script
+  command: '/usr/bin/kdp-hive-enable /opt/hive/bin/hive --service llap --instances {{ hive_llap_instances }} --size {{ hive_llap_memory_size }} --name {{ hive_llap_instance_name }} --output /var/lib/hive/llap/'
+  args:
+    creates: '/var/lib/hive/llap/'
+
+- name: Fix LLAP start script (remove newline)
+  replace:
+    path: /var/lib/hive/llap/run.sh
+    regexp: '^\n'
+    replace: ''
+
+- name: Fix LLAP start script (dont exit when error)
+  replace:
+    path: /var/lib/hive/llap/run.sh
+    regexp: 'bash -e'
+    replace: 'bash'
+
+- name: Create LLAP stop script
+  template:
+    src: bin/stop.sh.j2
+    dest: /var/lib/hive/llap/stop.sh
+    mode: 0755
+    owner: hive
+    group: hive
+
+- name: Change ownership of LLAP script
+  file: 
+    path: /var/lib/hive/llap
+    owner: hive
+    group: hive
+    recurse: yes
+  with_items:
+    - /var/lib/hive/llap
+    - /var/lib/hive/tmp/s3a
+
+
+- name: Install SystemD Service
+  copy:
+    src: 'systemd/{{ item }}'
+    dest: /usr/lib/systemd/system/
+  with_items:
+    - hiveserver2.service
+    - hiveserver2-rm.service
+    - hiveserver2-nm.service
+    - hiveserver2-historyserver.service
+    - hiveserver2-zk.service
+    - hiveserver2-llap.service
+
+- name: Reload SystemD
+  systemd:
+    name: '{{ item }}'
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+  with_items:
+    - hiveserver2-zk.service
+    - hiveserver2-rm.service
+    - hiveserver2-nm.service
+    - hiveserver2-historyserver.service
+    - hiveserver2.service
+    - hiveserver2-llap.service
+
+- name: Wait for Resource Manager
+  wait_for:
+    port: 8032
+    delay: 10
+
+- name: Register LLAP Service
+  shell: '/usr/bin/kdp-hive-enable /var/lib/hive/llap/run.sh && touch /var/lib/hive/llap/executed'
+  args:
+    creates: /var/lib/hive/llap/executed

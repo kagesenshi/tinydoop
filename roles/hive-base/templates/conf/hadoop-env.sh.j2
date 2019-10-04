@@ -1,3 +1,5 @@
+#!/bin/bash
+
 export JAVA_HOME=/usr/lib/jvm/java/
 export HADOOP_HOME=/opt/hadoop/
 export HADOOP_COMMON_HOME=$HADOOP_HOME
@@ -16,5 +18,7 @@ fi
 export YARN_HOME=$HADOOP_HOME
 export PATH=$PATH:$HADOOP_HOME/bin
 export HADOOP_CLASSPATH=$(hadoop classpath)
+export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HADOOP_HOME/share/hadoop/tools/lib/*.jar"
 export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/share/java/mysql-connector-java.jar"
 export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/share/java/postgresql-jdbc.jar"
+export CLASSPATH="$CLASSPATH:$HADOOP_CLASSPATH"

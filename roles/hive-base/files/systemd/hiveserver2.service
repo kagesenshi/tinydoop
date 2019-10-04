@@ -1,0 +1,15 @@
+[Unit]
+Description=HiveServer2
+After=network.target hiveserver2-rm.service hiveserver2-nm.service
+
+[Service]
+User=hive
+Group=hive
+Type=simple
+EnvironmentFile=/etc/sysconfig/hiveserver2
+ExecStart=/opt/hive/bin/hiveserver2
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

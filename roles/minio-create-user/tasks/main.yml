@@ -18,6 +18,8 @@
 
 - name: Create bucket for user
   command: 'mc mb {{ minio_host }}/{{ minio_user_bucket }}'
+  ignore_errors: yes
+  register: create_bucket
 
 - name: Create bucket permission JSON
   template:

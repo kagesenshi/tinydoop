@@ -1,0 +1,18 @@
+[Unit]
+Description=HiveServer2
+After=network.target hiveserver2-rm.service hiveserver2-nm.service
+
+[Service]
+User=hive
+Group=hive
+Type=forking
+EnvironmentFile=/etc/sysconfig/hiveserver2
+ExecStart=/usr/bin/kdp-hive-enable /var/lib/hive/llap/run.sh
+ExecStop=/usr/bin/kdp-hive-enable /var/lib/hive/llap/stop.sh
+RestartSec=10
+WorkingDirectory=/var/lib/hive/
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
