@@ -14,7 +14,6 @@
     checksum: '{{ item.checksum }}'
   with_items:
     - '{{ hadoop_pkg }}'
-    - '{{ zookeeper_pkg }}'
 
 - name: Setup dependencies
   dnf:
@@ -33,14 +32,50 @@
     state: directory
   with_items:
     - /opt/kdp/
+    - /etc/kdp/env/
+    - /etc/kdp/conf/
+
+- name: Create Hadoop Groups
+  group:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - hadoop
+    - yarn
+
+- name: Create Hadoop User
+  user:
+    name: '{{ item }}'
+    group: 'hadoop'
+    home: '/var/lib/{{ item }}/'
+    create_home: no
+    system: yes
+    state: present
+  with_items:
+    - yarn
+
 
 - name: Create Hadoop Directories
   file:
     path: "{{ item }}"
     state: directory
+    owner: root
+    group: hadoop
+    mode: 775
   with_items:
     - /var/lib/hadoop/
     - /var/log/hadoop/
+
+- name: Create YARN Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: yarn
+    group: yarn
+    mode: 0775
+  with_items:
+    - /var/lib/yarn/
+    - /var/log/yarn/
 
 - name: Extract Archives
   unarchive: 
@@ -50,8 +85,6 @@
   with_items:
     - { src: '{{ download_cache }}/{{ hadoop_pkg.filename }}',
         creates: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}' }
-    - { src: '{{ download_cache }}/apache-zookeeper-{{ zookeeper_pkg.version }}-bin.tar.gz',
-        creates: '/opt/kdp/apache-zookeeper-{{ zookeeper_pkg.version }}-bin' }
 
 - name: Create Symlinks
   file:
@@ -60,8 +93,6 @@
     state: link
   with_items:
     - { src: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}', dest: /opt/hadoop }
-    - { src: '/opt/kdp/apache-zookeeper-{{ zookeeper_pkg.version }}-bin/',
-          dest: /opt/zookeeper }
 
 - name: Copy AWS Jars
   copy:
@@ -70,12 +101,44 @@
     remote_src: yes
   with_items:
     - 'hadoop-aws-{{ hadoop_pkg.version }}.jar'
-    - aws-java-sdk-bundle-1.11.375.jar
+    - aws-java-sdk-bundle-1.11.271.jar
+
+- name: Copy Database Drivers
+  copy:
+    src: '{{ item }}'
+    dest: '/opt/kdp/hadoop-{{ hadoop_pkg.version }}/share/hadoop/common/lib/'
+    remote_src: yes
+  with_items:
+    - /usr/share/java/mysql-connector-java.jar
+    - /usr/share/java/postgresql-jdbc.jar 
+
+
+- name: Install Hadoop Configurations
+  template:
+    src: 'conf/{{ item }}.j2'
+    dest: '/etc/kdp/conf/{{ item }}'
+  with_items:
+    - yarn-env.sh
+    - hadoop-env.sh
+    - hdfs-site.xml
+    - yarn-site.xml
+    - capacity-scheduler.xml
+    - core-site.xml
+    - mapred-site.xml
+    - log4j.properties
+
 
 - name: Install Environment Profile
   template:
-    src: etc/profile.d/kdp-0-hadoop.sh.j2
-    dest: /etc/profile.d/kdp-0-hadoop.sh
+    src: etc/profile.d/kdp.sh.j2
+    dest: /etc/profile.d/kdp.sh
+
+- name: Install Environment Files
+  template:
+    src: 'env/{{ item }}.j2'
+    dest: '/etc/kdp/env/{{ item }}'
+  with_items:
+    - '0-hadoop.sh'
 
 - name: Install KDP enable script
   template:

@@ -1,0 +1,15 @@
+[Unit]
+Description=ResourceManager
+After=network.target 
+
+[Service]
+User={{ yarn_user }}
+Group={{ yarn_user }}
+Type=simple
+ExecStart=/usr/bin/kdp-enable /opt/hadoop/bin/yarn resourcemanager
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+

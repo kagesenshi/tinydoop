@@ -1,0 +1,25 @@
+---
+# vars file for zookeeper-base
+
+
+#zookeeper_pkg:
+#  version: 3.5.5
+#  filename: apache-zookeeper-3.5.5-bin.tar.gz
+#  uri: https://www-eu.apache.org/dist/zookeeper/zookeeper-3.5.5/apache-zookeeper-3.5.5-bin.tar.gz
+#  checksum: md5:a5b37a15fad4ac89f15b5072b94a2d1c
+#
+#
+zookeeper_pkg:
+  version: 3.4.13
+  filename: zookeeper-3.4.13.tar.gz
+  uri: https://archive.apache.org/dist/zookeeper/zookeeper-3.4.13/zookeeper-3.4.13.tar.gz
+  checksum: md5:c380eb03049998280895078d570cb944
+
+java_pkg: java-1.8.0-openjdk-devel
+java_home: /usr/lib/jvm/java/
+zookeeper_user: zookeeper
+zookeeper_group: zookeeper
+zookeeper_datadir: /var/lib/zookeeper/
+zookeeper_port: 2181
+zookeeper_admin_port: 2180
+zookeeper_logdir: /var/log/zookeeper/

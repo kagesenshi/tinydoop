@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source /etc/profile.d/kdp-0-hadoop.sh
+source /etc/profile.d/kdp.sh
 exec $@

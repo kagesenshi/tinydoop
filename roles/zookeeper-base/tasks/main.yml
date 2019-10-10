@@ -1,0 +1,106 @@
+---
+# tasks file for zookeeper-base
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ zookeeper_pkg }}'
+
+- name: Setup dependencies
+  dnf:
+    name:
+      - '{{ java_pkg }}'
+
+
+- name: Create KDP Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /opt/kdp/
+
+
+- name: Extract Archives
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "/opt/kdp"
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: '{{ download_cache }}/{{ zookeeper_pkg.filename }}',
+        creates: '/opt/kdp/zookeeper-{{ zookeeper_pkg.version }}' }
+
+- name: Create Symlinks
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+    - { src: '/opt/kdp/zookeeper-{{ zookeeper_pkg.version }}/',
+          dest: /opt/zookeeper }
+
+
+- name: Create Zookeeper Group
+  group:
+    name: '{{ zookeeper_group }}'
+    state: present
+
+- name: Create Zookeeper User
+  user:
+    name: '{{ zookeeper_user }}'
+    group: '{{ zookeeper_group }}'
+    home: '{{ zookeeper_datadir }}'
+    create_home: no
+    system: yes
+    state: present
+
+- name: Create ZK Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: '{{ zookeeper_user }}'
+    group: '{{ zookeeper_group }}'
+  with_items:
+    - '{{ zookeeper_datadir }}'
+    - '{{ zookeeper_logdir }}'
+    - /etc/zookeeper/
+
+
+- name: Install Zookeeper Configurations
+  template:
+    src: 'conf/{{ item }}.j2'
+    dest: '/etc/zookeeper/{{ item }}'
+    owner: '{{ zookeeper_user }}'
+    group: '{{ zookeeper_group }}'
+  with_items:
+    - zoo.cfg
+
+- name: Install ZK EnvironmentFile
+  template:
+    src: sysconfig/zookeeper.j2
+    dest: /etc/sysconfig/zookeeper
+
+- name: Install SystemD Service
+  template:
+    src: 'systemd/{{ item }}.j2'
+    dest: '/usr/lib/systemd/system/{{ item }}'
+  with_items:
+    - zookeeper.service
+
+- name: Reload SystemD
+  systemd:
+    name: '{{ item }}'
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+  with_items:
+    - zookeeper.service
+

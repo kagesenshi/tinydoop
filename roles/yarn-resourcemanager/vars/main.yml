@@ -1,0 +1,4 @@
+---
+# vars file for yarn-master
+yarn_user: yarn
+yarn_group: yarn

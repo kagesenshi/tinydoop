@@ -1,4 +1,4 @@
-export JAVA_HOME=/usr/lib/jvm/java/
+export JAVA_HOME={{ java_home }}
 export HADOOP_HOME=/opt/hadoop/
 export HADOOP_COMMON_HOME=$HADOOP_HOME
 export HADOOP_MAPRED_HOME=$HADOOP_HOME
@@ -7,14 +7,15 @@ export HADOOP_YARN_HOME=$HADOOP_HOME
 export HADOOP_PID_DIR=/var/tmp/
 
 if [ -z "$HADOOP_LOG_DIR" ]; then
-    export HADOOP_LOG_DIR=/var/log/hadoop/
+    export HADOOP_LOG_DIR=$HOME/kdp-logs
 fi
 
 if [ -z "$HADOOP_CONF_DIR" ]; then
-    export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop/
+    export HADOOP_CONF_DIR=/etc/kdp/conf/
 fi
 export YARN_HOME=$HADOOP_HOME
 export PATH=$PATH:$HADOOP_HOME/bin
 export HADOOP_CLASSPATH=$(hadoop classpath)
 export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/share/java/mysql-connector-java.jar"
 export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/share/java/postgresql-jdbc.jar"
+

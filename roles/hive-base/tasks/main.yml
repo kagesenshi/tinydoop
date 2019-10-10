@@ -1,21 +1,21 @@
 ---
 # tasks file for hive-master
-- name: Create Download Cache Directory
-  local_action:
-    module: file
-    path: '{{ download_cache }}'
-    state: directory
-
-- name: Download Archives
-  local_action:
-    module: get_url
-    url: '{{ item.uri }}'
-    dest: '{{ download_cache }}/{{ item.filename }}'
-    checksum: '{{ item.checksum }}'
-  with_items:
-    - '{{ hive_pkg }}'
-    - '{{ tez_pkg }}'
-
+#- name: Create Download Cache Directory
+#  local_action:
+#    module: file
+#    path: '{{ download_cache }}'
+#    state: directory
+#
+#- name: Download Archives
+#  local_action:
+#    module: get_url
+#    url: '{{ item.uri }}'
+#    dest: '{{ download_cache }}/{{ item.filename }}'
+#    checksum: '{{ item.checksum }}'
+#  with_items:
+#    - '{{ hive_pkg }}'
+#    - '{{ tez_pkg }}'
+#
 - name: Check For Hadoop Install
   stat:
     path: /opt/hadoop/bin/hadoop
@@ -56,7 +56,7 @@
   with_items:
     - /var/log/hive/
     - /var/lib/hive/
-    - /var/lib/hive/tmp/
+    - /var/lib/hive/jars/
     - /etc/hive/
 
 - name: Extract Archives
@@ -68,8 +68,7 @@
     - { src: '{{ download_cache }}/{{ hive_pkg.filename }}',
         creates: '/opt/kdp/apache-hive-{{ hive_pkg.version }}-bin' }
     - { src: '{{ download_cache }}/{{ tez_pkg.filename }}',
-        creates: '/opt/kdp/apache-tez-{{ tez_pkg.version }}-bin' }
-
+        creates: '/opt/kdp/tez-{{ tez_pkg.version }}' }
 
 - name: Create Symlinks
   file:
@@ -78,48 +77,37 @@
     state: link
   with_items:
     - { src: '/opt/kdp/apache-hive-{{ hive_pkg.version }}-bin', dest: /opt/hive }
-    - { src: '/opt/kdp/apache-tez-{{ tez_pkg.version }}-bin', dest: /opt/tez }
+    - { src: '/opt/kdp/tez-{{ tez_pkg.version }}', dest: /opt/tez }
 
 
 - name: Install Hadoop and Hive Configurations
   template:
     src: 'conf/{{ item }}.j2'
     dest: '/etc/hive/{{ item }}'
-    owner: hive
-    group: hive
   with_items:
-    - hive-env.sh
-    - yarn-env.sh
-    - hadoop-env.sh
-    - hdfs-site.xml
-    - yarn-site.xml
-    - capacity-scheduler.xml
     - core-site.xml
-    - mapred-site.xml
+    - hive-env.sh
     - hive-default.xml
     - hive-site.xml
     - tez-site.xml
-    - zoo.cfg
-    - log4j.properties
 
 - name: Install Hive EnvironmentFile
   template:
     src: sysconfig/hiveserver2.j2
     dest: /etc/sysconfig/hiveserver2
 
-- name: Install KDP Hive enable script
+- name: Install KDP Environment
   template:
-    src: bin/kdp-hive-enable
-    dest: /usr/bin/kdp-hive-enable
-    mode: 0755
+    src: env/20-hive.sh.j2
+    dest: /etc/kdp/env/20-hive.sh
 
 - name: Check if TEZ lib already uploaded
-  shell: '/usr/bin/kdp-hive-enable /opt/hadoop/bin/hdfs dfs -stat /tez.tar.gz'
+  shell: '/usr/bin/kdp-enable /opt/hadoop/bin/hdfs dfs -stat /tez.tar.gz'
   ignore_errors: yes
   register: has_tez
 
 - name: Upload TEZ lib
-  command: '/usr/bin/kdp-hive-enable /opt/hadoop/bin/hdfs dfs -put /opt/tez/share/tez.tar.gz /'
+  command: '/usr/bin/kdp-enable /opt/hadoop/bin/hdfs dfs -put /opt/tez/share/tez-0.9.2.tar.gz /tez.tar.gz'
   when: has_tez['rc'] != 0
 
 
@@ -145,13 +133,19 @@
   when: hive_metastore_driver != "mysql"
 
 - name: Initialize Hive Metastore
-  command: '/usr/bin/kdp-hive-enable /opt/hive/bin/schematool -dbType {{ hive_metastore_driver }} -initSchema'
+  command: '/usr/bin/kdp-enable /opt/hive/bin/schematool -dbType {{ hive_metastore_driver }} -initSchema'
   args:
     creates: '/var/lib/mysql/hive_metastore/DBS.ibd'
   when: hive_metastore_driver == "mysql"
 
+- name: Remove existing LLAP directory
+  file:
+    path: /var/lib/hive/llap
+    state: absent
+  when: reinitialize_llap == True
+
 - name: Initialize LLAP script
-  command: '/usr/bin/kdp-hive-enable /opt/hive/bin/hive --service llap --instances {{ hive_llap_instances }} --size {{ hive_llap_memory_size }} --name {{ hive_llap_instance_name }} --output /var/lib/hive/llap/'
+  command: '/usr/bin/kdp-enable /opt/hive/bin/hive --service llap --instances {{ hive_llap_instances }} --size {{ hive_llap_memory_size }} --name {{ hive_llap_instance_name }} --output /var/lib/hive/llap/'
   args:
     creates: '/var/lib/hive/llap/'
 
@@ -183,7 +177,6 @@
     recurse: yes
   with_items:
     - /var/lib/hive/llap
-    - /var/lib/hive/tmp/s3a
 
 
 - name: Install SystemD Service
@@ -192,10 +185,6 @@
     dest: /usr/lib/systemd/system/
   with_items:
     - hiveserver2.service
-    - hiveserver2-rm.service
-    - hiveserver2-nm.service
-    - hiveserver2-historyserver.service
-    - hiveserver2-zk.service
     - hiveserver2-llap.service
 
 - name: Reload SystemD
@@ -205,10 +194,6 @@
     daemon_reload: yes
     enabled: yes
   with_items:
-    - hiveserver2-zk.service
-    - hiveserver2-rm.service
-    - hiveserver2-nm.service
-    - hiveserver2-historyserver.service
     - hiveserver2.service
     - hiveserver2-llap.service
 
@@ -217,7 +202,7 @@
     port: 8032
     delay: 10
 
-- name: Register LLAP Service
-  shell: '/usr/bin/kdp-hive-enable /var/lib/hive/llap/run.sh && touch /var/lib/hive/llap/executed'
-  args:
-    creates: /var/lib/hive/llap/executed
+#- name: Register LLAP Service
+#  shell: '/usr/bin/kdp-enable /var/lib/hive/llap/run.sh && touch /var/lib/hive/llap/executed'
+#  args:
+#    creates: /var/lib/hive/llap/executed

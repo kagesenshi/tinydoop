@@ -3,15 +3,16 @@
 hive_pkg:
   version: 3.1.2
   filename: apache-hive-3.1.2-bin.tar.gz
-  uri: https://www-eu.apache.org/dist/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
-  checksum: md5:84a722c0f4c82d8c62914b321ea17661
+  #  uri: https://www-eu.apache.org/dist/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
+  checksum: md5:63a584177553502874119626f747451c
   derby_version: 10.14.1.0
 
 tez_pkg:
   version: 0.9.2
-  filename: apache-tez-0.9.2-bin.tar.gz
-  uri: https://www-eu.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz
-  checksum: md5:124b0dd83ba34e1a60cea50c8fb04f79
+  filename: tez-0.9.2-hadoop3.1.2.tar.gz
+  #  uri: https://www-eu.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz
+  checksum: md5:9d33f2e67dd34ac47983cea51c45a3fa
+
 
 s3a_bucket: hive
 s3a_endpoint: http://localhost:9000
@@ -23,22 +24,21 @@ hive_metastore_driver: mysql
 hive_metastore_driver_class: 'com.mysql.jdbc.Driver'
 hive_metastore_user: 'hive'
 hive_metastore_password: 'hivemetastore'
-hive_llap_instances: 2
-hive_llap_memory_size: 2g
+hive_llap_instances: 1
+hive_llap_memory_size: 6g
 hive_llap_instance_name: llap0
-
+reinitialize_llap: False
+hive_aux_jars: ''
+hive_aws_jars: '/opt/hadoop/share/hadoop/tools/lib/hadoop-aws-3.1.2.jar,/opt/hadoop/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar'
 zookeeper_quorum: localhost:2181
-zookeeper_datadir: /var/lib/hive/zk
-zookeeper_port: 2181
-zookeeper_admin_port: 2180
 
-yarn_rm_host: localhost
-yarn_rm_port: 8032
-yarn_rm_scheduler_port: 8030
-yarn_rm_webapp_port: 8088
-yarn_rm_webapp_https_port: 8090
-yarn_rm_resource_tracker_port: 8031
-yarn_rm_admin_port: 8033
-yarn_rm_timeline_port: 8188
-yarn_rm_timeline_https_port: 8190
-yarn_rm_mrjobhistory_port: 19888
+#yarn_rm_host: localhost
+#yarn_rm_port: 8032
+#yarn_rm_scheduler_port: 8030
+#yarn_rm_webapp_port: 8088
+#yarn_rm_webapp_https_port: 8090
+#yarn_rm_resource_tracker_port: 8031
+#yarn_rm_admin_port: 8033
+#yarn_rm_timeline_port: 8188
+#yarn_rm_timeline_https_port: 8190
+#yarn_rm_mrjobhistory_port: 19888

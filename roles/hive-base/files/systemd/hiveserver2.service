@@ -6,8 +6,7 @@ After=network.target hiveserver2-rm.service hiveserver2-nm.service
 User=hive
 Group=hive
 Type=simple
-EnvironmentFile=/etc/sysconfig/hiveserver2
-ExecStart=/opt/hive/bin/hiveserver2
+ExecStart=/usr/bin/kdp-enable /opt/hive/bin/hiveserver2
 Restart=on-failure
 RestartSec=5s
 

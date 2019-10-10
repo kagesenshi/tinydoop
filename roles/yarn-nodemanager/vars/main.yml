@@ -1,0 +1,5 @@
+---
+# vars file for yarn-worker
+yarn_user: yarn
+yarn_group: yarn
+

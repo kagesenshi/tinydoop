@@ -152,6 +152,7 @@
   firewalld:
     port: '{{ ansible_port }}/tcp'
     state: enabled
+    immediate: yes
     permanent: yes
 
 - name: Reload SystemD
@@ -162,6 +163,5 @@
   with_items:
     - airflow-webserver
     - airflow-scheduler
-    - firewalld
 
 

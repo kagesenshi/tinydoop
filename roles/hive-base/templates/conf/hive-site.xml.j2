@@ -21,6 +21,26 @@
   </property>
 
 
+  <property>
+    <name>fs.s3a.bucket.{{ s3a_bucket }}.access.key</name>
+    <value>{{ s3_access_key }}</value>
+ </property>
+
+  <property>
+    <name>fs.s3a.bucket.{{ s3a_bucket }}.secret.key</name>
+    <value>{{ s3_secret_key }}</value>
+  </property>
+
+   <property>
+      <name>hadoop.tmp.dir</name>
+      <value>/var/tmp/${user.name}</value>
+   </property>
+
+   <property>
+      <name>fs.s3a.buffer.dir</name>
+      <value>/var/tmp/</value>
+   </property>
+
    <property>
      <name>fs.s3a.path.style.access</name>
      <value>true</value>
@@ -55,6 +75,66 @@
 
     <!-- LLAP -->
 
+  <property>
+    <name>hive.server2.enable.doAs</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>hive.llap.daemon.yarn.container.mb</name>
+    <value>4096</value>
+  </property>
+
+  <property>
+    <name>hive.llap.io.memory.size</name>
+    <value>512Mb</value>
+  </property>
+
+  <property>
+    <name>hive.llap.daemon.memory.per.instance.mb</name>
+    <value>4096</value>
+  </property>
+
+
+  <property>
+    <name>hive.llap.daemon.num.executors</name>
+    <value>4</value>
+  </property>
+
+
+
+  <property>
+    <name>hive.execution.engine</name>
+    <value>tez</value>
+  </property>
+
+  <property>
+    <name>hive.execution.mode</name>
+    <value>llap</value>
+  </property>
+
+  <property>
+    <name>hive.default.fileformat</name>
+    <value>orc</value>
+  </property>
+
+  <property>
+    <name>hive.llap.client.consistent.splits</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>hive.aux.jars.path</name>
+    <value>{{ hive_aws_jars }}</value>
+  </property>
+
+  <property>
+    <name>hive.tez.container.size</name>
+    <value>1024</value>
+  </property>
+
+
+
    <property>
         <name>hive.llap.io.enabled</name>
         <value>true</value>
@@ -67,12 +147,12 @@
 
    <property>
         <name>hive.llap.hdfs.package.dir</name>
-        <value>/llap/</value>
+        <value>/yarn-services/</value>
     </property>
 
    <property>
         <name>hive.llap.execution.mode</name>
-        <value>all</value>
+        <value>only</value>
     </property>
 
    <property>
@@ -81,8 +161,55 @@
     </property>
 
    <property>
+        <name>hive.llap.daemon.work.dirs</name>
+        <value>/var/tmp/${user.name}</value>
+    </property>
+
+   <property>
         <name>hive.llap.io.use.lrfu</name>
         <value>true</value>
     </property>
+
+   <property>
+        <name>hive.vectorized.execution.enabled</name>
+        <value>true</value>
+    </property>
+
+
+
+   <property>
+        <name>hive.support.concurrency</name>
+        <value>true</value>
+    </property>
+
+   <property>
+        <name>hive.txn.manager</name>
+        <value>org.apache.hadoop.hive.ql.lockmgr.DbTxnManager</value>
+    </property>
+
+   <property>
+        <name>hive.tez.auto.reducer.parallelism</name>
+        <value>true</value>
+    </property>
+
+   <property>
+        <name>tez.am.container.reuse.enabled</name>
+        <value>true</value>
+    </property>
+
+<!--
+    <property>
+        <name>tez.am.log.level</name>
+        <value>DEBUG</value>
+    </property>
+    <property>
+        <name>mapreduce.map.log.level</name>
+        <value>DEBUG</value>
+    </property>
+    <property>
+        <name>hive.tez.log.level</name>
+        <value>DEBUG</value>
+    </property>
+-->
 
 </configuration>
