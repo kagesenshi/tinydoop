@@ -1,0 +1,15 @@
+---
+# vars file for metabase
+metabase_jar:
+  version: 0.33.2
+  uri: http://downloads.metabase.com/v0.33.2/metabase.jar
+  checksum: md5:e93e18d572600c99bb32689874279fcf
+  filename: metabase.jar
+
+metabase_db: metabase
+metabase_db_user: metabase
+metabase_db_password: metabase
+metabase_db_host: localhost
+metabase_db_port: 3306
+metabase_db_type: mysql
+metabase_connection_timeout: 30000

@@ -1,0 +1,18 @@
+[Unit]
+Description=Metabase
+After=network.target
+Wants=
+
+[Service]
+User=metabase
+Group=metabase
+Type=simple
+EnvironmentFile=/etc/sysconfig/metabase
+ExecStart=/usr/bin/java -jar /opt/kdp/metabase.jar
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/var/lib/metabase
+
+[Install]
+WantedBy=multi-user.target
+

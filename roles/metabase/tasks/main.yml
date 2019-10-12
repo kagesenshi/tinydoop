@@ -1,0 +1,105 @@
+---
+# tasks file for metabase
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ metabase_jar }}'
+
+- name: Setup dependencies
+  dnf:
+    name:
+      - python3
+      - python-unversioned-command
+      - java-1.8.0-openjdk-devel
+      - mysql-connector-java
+      - postgresql-jdbc
+      - grep
+      - polkit
+
+- name: Create KDP Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /opt/kdp/
+
+- name: Create Metabase Group
+  group:
+    name: metabase
+    state: present
+
+- name: Create Metabase User
+  user:
+    name: metabase
+    group: metabase
+    home: /var/lib/metabase/
+    create_home: no
+    system: yes
+    state: present
+
+- name: Create Metabase Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: metabase
+    group: metabase
+  with_items:
+    - /var/log/metabase/
+    - /var/lib/metabase/
+    - /etc/metabase/
+
+- name: Install Metabase
+  copy:
+    src: '{{ download_cache }}/{{ metabase_jar.filename }}'
+    dest: '/opt/kdp/{{ metabase_jar.filename }}'
+
+- name: Start MariaDB
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Create Metabase DB
+  mysql_db:
+    name: '{{ metabase_db }}'
+    state: present
+
+- name: Create Metabase DB User
+  mysql_user:
+    name: '{{ metabase_db_user }}'
+    password: '{{ metabase_db_password }}'
+    priv: '{{ metabase_db }}.*:ALL'
+
+
+- name: Copy Metabase EnvironmentFile
+  template:
+    src: sysconfig/metabase.j2
+    dest: /etc/sysconfig/metabase
+
+- name: Install SystemD Service
+  template:
+    src: 'systemd/{{ item }}.j2'
+    dest: '/usr/lib/systemd/system/{{ item }}'
+  with_items:
+    - metabase.service
+
+- name: Reload SystemD
+  systemd:
+    name: '{{ item }}'
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+  with_items:
+    - metabase.service
+
+
