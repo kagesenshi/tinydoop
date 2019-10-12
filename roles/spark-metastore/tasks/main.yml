@@ -1,0 +1,62 @@
+---
+# tasks file for spark-metastore
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ hive122_pkg }}'
+
+- name: Extract Archives
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "/opt/kdp"
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: '{{ download_cache }}/{{ hive122_pkg.filename }}',
+        creates: '/opt/kdp/{{ hive122_pkg.creates }}' }
+
+
+- name: Setup dependencies
+  dnf:
+    name:
+      - python3-PyMySQL
+      - mariadb-server
+
+- name: Start MariaDB
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Create Metastore
+  mysql_db:
+    name: '{{ spark_metastore_db }}'
+    state: present
+
+- name: Create Metastore User
+  mysql_user:
+    name: '{{ spark_metastore_user }}'
+    password: '{{ spark_metastore_password }}'
+    priv: '{{ spark_metastore_db }}.*:ALL'
+
+- fail:
+    msg: '{{ spark_metastore_driver }} is not yet a supported metastore driver in this ansible role'
+  when: spark_metastore_driver != "mysql"
+
+- name: Initialize Spark Metastore
+  command: '/usr/bin/kdp-enable /opt/spark/bin/spark-class org.apache.hive.beeline.HiveSchemaTool -dbType {{ spark_metastore_driver }} -initSchema'
+  environment:
+    HIVE_HOME: '/opt/kdp/{{ hive122_pkg.creates }}'
+  args:
+    creates: '/var/lib/mysql/{{ spark_metastore_db }}/DBS.ibd'
+  when: spark_metastore_driver == "mysql"
+

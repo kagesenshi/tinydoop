@@ -1,21 +1,21 @@
 ---
 # tasks file for hive-master
-#- name: Create Download Cache Directory
-#  local_action:
-#    module: file
-#    path: '{{ download_cache }}'
-#    state: directory
-#
-#- name: Download Archives
-#  local_action:
-#    module: get_url
-#    url: '{{ item.uri }}'
-#    dest: '{{ download_cache }}/{{ item.filename }}'
-#    checksum: '{{ item.checksum }}'
-#  with_items:
-#    - '{{ hive_pkg }}'
-#    - '{{ tez_pkg }}'
-#
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ hive_pkg }}'
+    - '{{ tez_pkg }}'
+
 - name: Check For Hadoop Install
   stat:
     path: /opt/hadoop/bin/hadoop
@@ -197,12 +197,3 @@
     - hiveserver2.service
     - hiveserver2-llap.service
 
-- name: Wait for Resource Manager
-  wait_for:
-    port: 8032
-    delay: 10
-
-#- name: Register LLAP Service
-#  shell: '/usr/bin/kdp-enable /var/lib/hive/llap/run.sh && touch /var/lib/hive/llap/executed'
-#  args:
-#    creates: /var/lib/hive/llap/executed

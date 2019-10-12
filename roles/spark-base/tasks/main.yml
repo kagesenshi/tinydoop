@@ -1,0 +1,109 @@
+---
+# tasks file for spark-base
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ spark_pkg }}'
+
+- name: Setup dependencies
+  dnf:
+    name:
+      - python3
+      - python-unversioned-command
+      - java-1.8.0-openjdk-devel
+      - mysql-connector-java
+      - postgresql-jdbc
+      - grep
+      - polkit
+
+
+- name: Create Spark Group
+  group:
+    name: spark
+    state: present
+
+- name: Create Spark User
+  user:
+    name: spark
+    group: spark
+    home: /var/lib/spark/
+    create_home: no
+    system: yes
+    state: present
+
+- name: Create Spark Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: spark
+    group: spark
+  with_items:
+    - /var/log/spark/
+    - /var/lib/spark/
+    - /etc/spark/
+
+- name: Create KDP Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /opt/kdp/
+
+- name: Extract Archives
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "/opt/kdp"
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: '{{ download_cache }}/{{ spark_pkg.filename }}',
+        creates: '/opt/kdp/{{ spark_pkg.creates }}' }
+
+- name: Create Symlinks
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+    - { src: '/opt/kdp/{{ spark_pkg.creates }}',
+        dest: /opt/spark }
+
+- name: Install KDP Environment
+  template:
+    src: env/30-spark.sh.j2
+    dest: /etc/kdp/env/30-spark.sh
+
+- name: Install Spark EnvironmentFile
+  template:
+    src: sysconfig/spark.j2
+    dest: /etc/sysconfig/spark
+
+
+- name: Install Hadoop and Spark Configurations
+  template:
+    src: 'conf/{{ item }}.j2'
+    dest: '/etc/spark/{{ item }}'
+  with_items:
+    - core-site.xml
+    - hive-site.xml
+    - spark-defaults.conf
+
+- name: Copy Database Drivers
+  copy:
+    src: '{{ item }}'
+    dest: '/opt/kdp/{{ spark_pkg.creates}}/jars/'
+    remote_src: yes
+  with_items:
+    - /usr/share/java/mysql-connector-java.jar
+    - /usr/share/java/postgresql-jdbc.jar
+
+

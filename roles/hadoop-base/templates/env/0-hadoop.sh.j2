@@ -16,6 +16,5 @@ fi
 export YARN_HOME=$HADOOP_HOME
 export PATH=$PATH:$HADOOP_HOME/bin
 export HADOOP_CLASSPATH=$(hadoop classpath)
-export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/share/java/mysql-connector-java.jar"
-export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/share/java/postgresql-jdbc.jar"
+export PATH="/opt/hadoop/bin:$PATH"
 

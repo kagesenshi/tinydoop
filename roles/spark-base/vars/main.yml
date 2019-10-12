@@ -1,0 +1,28 @@
+---
+# vars file for spark-base
+#spark_pkg:
+#  version: 2.4.4
+#  filename: spark-2.4.4-bin-without-hadoop.tgz
+#  uri: https://www-us.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-without-hadoop.tgz
+#  checksum: md5:6f8193604e6b34f700973acbb1291d59
+#  creates: spark-2.4.4-bin-without-hadoop
+#
+
+spark_pkg:
+  version: 2.4.4
+  filename: spark-2.4.4-bin-hadoop2.9.tgz
+  uri: http://repo.kagesenshi.org/kdp/spark-2.4.4-bin-hadoop2.9.tgz
+  checksum: md5:dfeceb9c2a3cf71b6acfaf225dd768de
+  creates: spark-2.4.4-bin-hadoop2.9
+
+spark_metastore_db: spark_metastore
+spark_metastore_host: localhost
+spark_metastore_port: 3306
+spark_metastore_driver: mysql
+spark_metastore_driver_class: 'com.mysql.jdbc.Driver'
+spark_metastore_user: 'spark'
+spark_metastore_password: 'sparkmetastore'
+
+spark_historyserver_address: 'localhost:18080'
+
+zookeeper_quorum: localhost:2181

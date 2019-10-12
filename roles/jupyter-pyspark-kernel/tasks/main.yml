@@ -21,20 +21,20 @@
     path: /usr/hdp/current
   register: is_hdp
 
-- name: Check if Tinydoop
+- name: Check if KDP
   stat:
-    path: /usr/share/tinydoop
-  register: is_tinydoop
+    path: /opt/kdp
+  register: is_kdp
 
 - name: set Hadoop distro fact (HDP)
   set_fact:
     hadoop_distro: hdp
   when: is_hdp.stat.exists == True
 
-- name: set Hadoop distro fact (Tinydoop)
+- name: set Hadoop distro fact (KDP)
   set_fact:
-    hadoop_distro: tinydoop
-  when: is_tinydoop.stat.exists == True
+    hadoop_distro: kdp
+  when: is_kdp.stat.exists == True
 
 
 
@@ -72,11 +72,26 @@
     creates: /opt/jupyter-pyspark-kernel/bin/python
   when: distro_family == 'fedora'
 
+- name: Setup pydoop
+  command: "/usr/bin/kdp-enable /opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  environment:
+    CFLAGS: "-I/usr/include/tirpc"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items:
+    - { package: pydoop,
+        version: '2.0.0',
+        pymodule: pydoop }
+
+
 - name: Setup base python packages
   command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
   args:
     creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
   with_items:
+    - { package: pypandoc,
+        version: 1.4,
+        pymodule: pypandoc }
     - { package: ipykernel,
         version: "5.1.2",
         pymodule: ipykernel }
@@ -101,36 +116,12 @@
     - { package: keyrings.cryptfile,
         version: '1.3.4',
         pymodule: keyrings/cryptfile }
-
-- name: Setup Optimus (Local)
-  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
-  args:
-    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
-  with_items:
-    - { package: optimuspyspark,
-        version: '2.2.7',
-        pymodule: optimus }
-  when: hadoop_distro == 'none'
-
-- name: Setup Optimus (Tinydoop)
-  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
-  args:
-    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
-  with_items:
-    - { package: optimuspyspark,
-        version: '2.2.7',
-        pymodule: optimus }
-  when: hadoop_distro == 'tinydoop'
-
-- name: Setup Optimus (HDP)
-  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
-  args:
-    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
-  with_items:
-    - { package: optimuspyspark,
-        version: '2.1.3',
-        pymodule: optimus }
-  when: hadoop_distro == 'hdp'
+    - { package: scikit-learn,
+        version: '0.21.3',
+        pymodule: sklearn }
+    - { package: scipy,
+        version: '1.3.1',
+        pymodule: scipy }
 
 
 - name: Setup additional python packages
@@ -139,12 +130,24 @@
     creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
   with_items: "{{ additional_pypackages }}"
 
-- name: Prep Hadoop Spark Package (Tinydoop)
+- name: Prep Hadoop Spark Package (KDP) - Create missing licenses dir
+  file:
+    path: '/opt/spark/licenses'
+    state: directory
+  when: hadoop_distro == 'kdp'
+
+- name: Prep Hadoop Spark Package (KDP) - Create LICENSE file
+  get_url:
+    url: http://www.apache.org/licenses/LICENSE-2.0
+    dest: '/opt/spark/licenses/LICENSE.txt'
+  when: hadoop_distro == 'kdp'
+
+- name: Prep Hadoop Spark Package (KDP)
   command: '/opt/jupyter-pyspark-kernel/bin/python setup.py sdist'
   args:
     chdir: '/opt/spark/python'
     creates: /opt/spark/python/dist/pyspark-2.4.4.tar.gz
-  when: hadoop_distro == 'tinydoop'
+  when: hadoop_distro == 'kdp'
 
 - name: Prep Hadoop Spark Package (HDP)
   command: '/opt/jupyter-pyspark-kernel/bin/python setup.py sdist'
@@ -153,11 +156,11 @@
     creates: /usr/hdp/current/spark2-client/python/dist/pyspark-2.3.1.dev0.tar.gz
   when: hadoop_distro == 'hdp'
 
-- name: Install Hadoop PySpark Package (Tinydoop)
+- name: Install Hadoop PySpark Package (KDP)
   command: "/opt/jupyter-pyspark-kernel/bin/pip install /opt/spark/python/dist/pyspark-2.4.4.tar.gz"
   args:
     creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/pyspark-2.4.1.dist-info"
-  when: hadoop_distro == 'tinydoop'
+  when: hadoop_distro == 'kdp'
 
 - name: Install Hadoop PySpark Package (HDP)
   command: "/opt/jupyter-pyspark-kernel/bin/pip install /usr/hdp/current/spark2-client/python/dist/pyspark-2.3.1.dev0.tar.gz"

@@ -1,0 +1,18 @@
+---
+# tasks file for spark-thriftserver
+- name: Install SystemD Service
+  template:
+    src: 'systemd/{{ item }}.j2'
+    dest: '/usr/lib/systemd/system/{{ item }}'
+  with_items:
+    - spark-thriftserver.service
+
+- name: Reload SystemD
+  systemd:
+    name: '{{ item }}'
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+  with_items:
+    - spark-thriftserver.service
+

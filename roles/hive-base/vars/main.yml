@@ -4,6 +4,7 @@ hive_pkg:
   version: 3.1.2
   filename: apache-hive-3.1.2-bin.tar.gz
   #  uri: https://www-eu.apache.org/dist/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
+  uri: http://repo.kagesenshi.org/kdp/apache-hive-3.1.2-bin.tar.gz
   checksum: md5:63a584177553502874119626f747451c
   derby_version: 10.14.1.0
 
@@ -11,6 +12,7 @@ tez_pkg:
   version: 0.9.2
   filename: tez-0.9.2-hadoop3.1.2.tar.gz
   #  uri: https://www-eu.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz
+  uri: http://repo.kagesenshi.org/kdp/apache-tez-0.9.2-bin.tar.gz
   checksum: md5:9d33f2e67dd34ac47983cea51c45a3fa
 
 

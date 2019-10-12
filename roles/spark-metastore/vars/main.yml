@@ -1,0 +1,17 @@
+---
+# vars file for spark-metastore
+hive122_pkg:
+  version: 1.2.2
+  filename: apache-hive-1.2.2-bin.tar.gz
+  checksum: md5:40170843bce0c41f07f763920a6ab97d
+  uri: https://www-us.apache.org/dist/hive/hive-1.2.2/apache-hive-1.2.2-bin.tar.gz
+  creates: apache-hive-1.2.2-bin
+
+spark_metastore_db: spark_metastore
+spark_metastore_host: localhost
+spark_metastore_port: 3306
+spark_metastore_driver: mysql
+spark_metastore_driver_class: 'com.mysql.jdbc.Driver'
+spark_metastore_user: 'spark'
+spark_metastore_password: 'sparkmetastore'
+

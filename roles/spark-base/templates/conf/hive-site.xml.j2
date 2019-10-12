@@ -1,0 +1,115 @@
+<configuration>
+
+   <property>
+      <name>fs.defaultFS</name>
+      <value>s3a://{{ s3a_bucket }}</value>
+   </property>
+
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>{{ s3a_endpoint }}</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>{{ s3_access_key }}</value>
+ </property>
+
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>{{ s3_secret_key }}</value>
+  </property>
+
+
+  <property>
+    <name>fs.s3a.bucket.{{ s3a_bucket }}.access.key</name>
+    <value>{{ s3_access_key }}</value>
+ </property>
+
+  <property>
+    <name>fs.s3a.bucket.{{ s3a_bucket }}.secret.key</name>
+    <value>{{ s3_secret_key }}</value>
+  </property>
+
+   <property>
+      <name>hive.metastore.warehouse.dir</name>
+      <value>/warehouse</value>
+   </property>
+
+   <property>
+      <name>hadoop.tmp.dir</name>
+      <value>/var/tmp/${user.name}</value>
+   </property>
+
+   <property>
+      <name>fs.s3a.buffer.dir</name>
+      <value>/var/tmp/</value>
+   </property>
+
+   <property>
+     <name>fs.s3a.path.style.access</name>
+     <value>true</value>
+   </property>
+
+   <property>
+     <name>fs.s3a.impl</name>
+     <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+   </property>
+
+   <property>
+      <name>javax.jdo.option.ConnectionURL</name>
+      <value>jdbc:{{ spark_metastore_driver }}://{{ spark_metastore_host }}:{{ spark_metastore_port }}/{{ spark_metastore_db }}</value>
+   </property>
+
+   <property>
+      <name>javax.jdo.option.ConnectionDriverName</name>
+      <value>{{ spark_metastore_driver_class }}</value>
+   </property>
+   <property>
+      <name>javax.jdo.option.ConnectionUserName</name>
+      <value>{{ spark_metastore_user }}</value>
+   </property>
+   <property>
+      <name>javax.jdo.option.ConnectionPassword</name>
+      <value>{{ spark_metastore_password }}</value>
+   </property>
+
+  <property>
+    <name>hive.zookeeper.quorum</name>
+    <value>{{ zookeeper_quorum }}</value>
+  </property>
+
+    <!-- LLAP -->
+
+  <property>
+    <name>hive.server2.enable.doAs</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>hive.default.fileformat</name>
+    <value>orc</value>
+  </property>
+
+  <property>
+    <name>hive.aux.jars.path</name>
+    <value></value>
+  </property>
+
+   <property>
+        <name>hive.vectorized.execution.enabled</name>
+        <value>true</value>
+    </property>
+
+
+   <property>
+        <name>hive.support.concurrency</name>
+        <value>true</value>
+    </property>
+
+   <property>
+        <name>hive.txn.manager</name>
+        <value>org.apache.hadoop.hive.ql.lockmgr.DbTxnManager</value>
+    </property>
+
+</configuration>

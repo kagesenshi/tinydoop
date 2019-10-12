@@ -1,0 +1,15 @@
+[Unit]
+Description=Spark JDBC ThriftServer
+After=network.target 
+
+[Service]
+User=spark
+Group=spark
+Type=simple
+EnvironmentFile=/etc/sysconfig/spark
+ExecStart=/usr/bin/kdp-enable /opt/spark/sbin/start-history-server.sh
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

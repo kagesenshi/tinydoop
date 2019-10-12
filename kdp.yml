@@ -1,0 +1,74 @@
+- hosts: storage
+  vars_files: 
+    - vars.yml
+  roles:
+    - { role: minio-base,
+        download_cache: '{{ kdp["download_cache"] }}' }
+    - { role: minio-create-user,
+        minio_host: 'local',
+        minio_user_bucket: '{{ kdp["s3_bucket"] }}',
+        minio_user_access_key: '{{ kdp["s3_access_key"] }}',
+        minio_user_secret_key: '{{ kdp["s3_secret_key"] }}' }
+
+- hosts: node
+  vars_files: 
+    - vars.yml
+  roles:
+    - { role: hadoop-base,
+        s3_access_key: '{{ kdp["s3_access_key"] }}',
+        s3_secret_key: '{{ kdp["s3_secret_key"] }}',
+        s3a_bucket: '{{ kdp["s3_bucket"] }}',
+        s3a_endpoint: '{{ kdp["s3_endpoint"] }}',
+        download_cache: '{{ kdp["download_cache"] }}', 
+        yarn_resource_vcores_multiplier: 8,
+        yarn_resource_memory_multiplier: 2 }
+    - { role: spark-base,
+        s3_access_key: '{{ kdp["s3_access_key"] }}',
+        s3_secret_key: '{{ kdp["s3_secret_key"] }}',
+        s3a_bucket: '{{ kdp["s3_bucket"] }}',
+        s3a_endpoint: '{{ kdp["s3_endpoint"] }}',
+        spark_metastore_db: '{{ kdp["spark_metastore_db"] }}',
+        spark_metastore_host: '{{ kdp["spark_metastore_host"] }}',
+        spark_metastore_port: '{{ kdp["spark_metastore_port"] }}',
+        spark_metastore_user: '{{ kdp["spark_metastore_user"] }}',
+        spark_metastore_password: '{{ kdp["spark_metastore_password"] }}',
+        download_cache: '{{ kdp["download_cache"] }}' }
+
+
+- hosts: utility
+  vars_files:
+    - vars.yml
+  roles:
+    - { role: spark-metastore,
+        download_cache: '{{ kdp["download_cache"] }}',
+        spark_metastore_db: '{{ kdp["spark_metastore_db"] }}',
+        spark_metastore_host: '{{ kdp["spark_metastore_host"] }}',
+        spark_metastore_port: '{{ kdp["spark_metastore_port"] }}',
+        spark_metastore_user: '{{ kdp["spark_metastore_user"] }}',
+        spark_metastore_password: '{{ kdp["spark_metastore_password"] }}' }
+        
+
+- hosts: master
+  vars_files: 
+    - vars.yml
+  roles:
+    - { role: zookeeper-base,
+        download_cache: '{{ kdp["download_cache"] }}' }
+    - { role: yarn-resourcemanager }
+    - { role: spark-thriftserver }
+    - { role: spark-historyserver }
+    - { role: yarn-historyserver }
+
+- hosts: worker
+  vars_files: vars.yml
+  roles:
+    - { role: yarn-nodemanager }
+
+- hosts: edge
+  vars_files: 
+    - vars.yml
+  roles:
+    - { role: jupyterhub-base }
+    - { role: jupyter-pyspark-kernel }
+
+
