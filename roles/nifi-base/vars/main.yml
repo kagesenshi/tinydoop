@@ -1,0 +1,9 @@
+---
+# vars file for nifi-base
+nifi_pkg:
+  version: 1.9.2
+  uri: https://www-eu.apache.org/dist/nifi/1.9.2/nifi-1.9.2-bin.tar.gz
+  checksum: md5:473a7e5576c46626251d3d8d98e8cbd8
+  filename: nifi-1.9.2-bin.tar.gz
+  creates: nifi-1.9.2
+

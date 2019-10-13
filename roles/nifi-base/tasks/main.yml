@@ -1,0 +1,130 @@
+---
+# tasks file for nifi-base
+- name: Create Download Cache Directory
+  local_action:
+    module: file
+    path: '{{ download_cache }}'
+    state: directory
+
+- name: Download Archives
+  local_action:
+    module: get_url
+    url: '{{ item.uri }}'
+    dest: '{{ download_cache }}/{{ item.filename }}'
+    checksum: '{{ item.checksum }}'
+  with_items:
+    - '{{ nifi_pkg }}'
+
+
+- name: Create NiFi Group
+  group:
+    name: nifi
+    state: present
+
+- name: Create NiFi User
+  user:
+    name: nifi
+    group: nifi
+    home: /var/lib/nifi/
+    create_home: no
+    system: yes
+    state: present
+
+- name: Create NiFi Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: nifi
+    group: nifi
+  with_items:
+    - /var/log/nifi/
+    - /var/lib/nifi/
+    - /etc/nifi/conf/
+
+- name: Create KDP Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /opt/kdp/
+
+- name: Extract Archives
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "/opt/kdp"
+    creates: "{{ item.creates }}"
+  with_items:
+    - { src: '{{ download_cache }}/{{ nifi_pkg.filename }}',
+        creates: '/opt/kdp/{{ nifi_pkg.creates }}' }
+
+- name: Create Symlinks
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+    - { src: '/opt/kdp/{{ nifi_pkg.creates }}',
+        dest: /opt/nifi }
+    - { src: '/opt/kdp/{{ nifi_pkg.creates }}/lib',
+        dest: /etc/nifi/lib }
+
+
+- name: Install NiFi Configurations
+  template:
+    src: 'conf/{{ item }}.j2'
+    dest: '/etc/nifi/conf/{{ item }}'
+  with_items:
+    - bootstrap.conf
+    - nifi.properties
+    - state-management.xml
+    - logback.xml
+
+- name: Override NiFi Bins
+  template:
+    src: 'conf/{{ item }}.j2'
+    dest: '/opt/nifi/bin/{{ item }}'
+  with_items:
+    - nifi-env.sh
+
+
+
+- name: Fix NiFi permissions
+  file:
+    path: '{{ item }}'
+    mode: u=rwX,g=rX,o=rX
+    recurse: yes
+  with_items:
+    - /opt/nifi/conf/
+    - /opt/nifi/lib/
+    - /opt/nifi/extensions/
+
+- name: Fix NiFi permissions
+  file:
+    path: '{{ item }}'
+    mode: u=rwx,g=rx,o=rx
+    recurse: yes
+  with_items:
+    - /opt/nifi/bin/
+
+- name: Install NiFi EnvironmentFile
+  template:
+    src: sysconfig/nifi.j2
+    dest: /etc/sysconfig/nifi
+
+
+- name: Install SystemD Service
+  template:
+    src: 'systemd/{{ item }}.j2'
+    dest: '/usr/lib/systemd/system/{{ item }}'
+  with_items:
+    - nifi.service
+
+- name: Reload SystemD
+  systemd:
+    name: '{{ item }}'
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+  with_items:
+    - nifi.service
+

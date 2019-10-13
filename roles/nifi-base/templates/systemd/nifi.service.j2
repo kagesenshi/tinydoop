@@ -1,0 +1,18 @@
+[Unit]
+Description=NiFi
+After=network.target 
+
+[Service]
+User=nifi
+Group=nifi
+Type=forking
+EnvironmentFile=/etc/sysconfig/nifi
+ExecStart=/opt/nifi/bin/nifi.sh start
+ExecStop=/opt/nifi/bin/nifi.sh stop
+PIDFile=/tmp/nifi.pid
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/opt/nifi/bin/
+
+[Install]
+WantedBy=multi-user.target
