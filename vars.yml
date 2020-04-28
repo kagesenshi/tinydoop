@@ -1,0 +1,23 @@
+kdp:
+  download_cache: /home/izhar/Devel/tinydoop/downloads
+  s3_bucket: kdp
+  s3_access_key: accesskey
+  s3_secret_key: secretkey
+  s3_endpoint: http://localhost:9000
+  spark_metastore_driver: postgresql
+  spark_metastore_driver_class: 'org.postgresql.Driver'
+  spark_metastore_db: spark_metastore
+  spark_metastore_host: localhost
+  spark_metastore_port: 5432
+  spark_metastore_user: 'spark'
+  spark_metastore_password: 'sparkmetastore'
+  airflow_driver: 'postgresql+psycopg2'
+  airflow_db: 'airflow'
+  airflow_db_user: 'airflow'
+  airflow_db_password: 'airflowpassword'
+  airflow_db_host: localhost
+  airflow_db_port: 5432
+  airflow_dburi: 'postgresql+psycopg2://{{ kdp["airflow_db_user"] }}:{{ kdp["airflow_db_password"] }}@{{ kdp["airflow_db_host"] }}:{{ kdp["airflow_db_port"] }}:{{ kdp["airflow_db_port"] }}/{{ kdp["airflow_db"] }}'
+  airflow_celery_broker_url: 'sqla+postgresql://{{ kdp["airflow_db_user"] }}:{{ kdp["airflow_db_password"] }}@{{ kdp["airflow_db_host"] }}:{{ kdp["airflow_db_port"] }}:{{ kdp["airflow_db_port"] }}/{{ kdp["airflow_db"]'
+  airflow_celery_result_backend: 'db+postgresql://{{ kdp["airflow_db_user"] }}:{{ kdp["airflow_db_password"] }}@{{ kdp["airflow_db_host"] }}:{{ kdp["airflow_db_port"] }}:{{ kdp["airflow_db_port"] }}/{{ kdp["airflow_db"]'
+  initialize_metastore: False

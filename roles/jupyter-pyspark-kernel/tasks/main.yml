@@ -37,7 +37,6 @@
   when: is_kdp.stat.exists == True
 
 
-
 # === Setup dependencies ===
 
 - name: Setup system dependencies (Fedora)
@@ -72,7 +71,7 @@
     creates: /opt/jupyter-pyspark-kernel/bin/python
   when: distro_family == 'fedora'
 
-- name: Setup pydoop
+- name: Setup pydoop (KDP)
   command: "/usr/bin/kdp-enable /opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
   environment:
     CFLAGS: "-I/usr/include/tirpc"
@@ -82,7 +81,20 @@
     - { package: pydoop,
         version: '2.0.0',
         pymodule: pydoop }
+  when: hadoop_distro == 'kdp'
 
+
+- name: Setup pydoop (HDP)
+  command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
+  environment:
+    CFLAGS: "-I/usr/include/tirpc"
+  args:
+    creates: "/opt/jupyter-pyspark-kernel/lib64/python*/site-packages/{{ item.pymodule }}"
+  with_items:
+    - { package: pydoop,
+        version: '2.0.0',
+        pymodule: pydoop }
+  when: hadoop_distro == 'hdp'
 
 - name: Setup base python packages
   command: "/opt/jupyter-pyspark-kernel/bin/pip install {{ item.package }}=={{ item.version }}"
@@ -122,6 +134,22 @@
     - { package: scipy,
         version: '1.3.1',
         pymodule: scipy }
+    - { package: matplotlib,
+        version: '3.1.1',
+        pymodule: matplotlib }
+    - { package: pyviz,
+        version: '0.10.3',
+        pymodule: pyviz }
+    - { package: holoviews,
+        version: '1.12.7',
+        pymodule: holoviews }
+    - { package: pydot,
+        version: '1.4.1',
+        pymodule: pydot }
+    - { package: 'pandas-profiling[notebook,html]',
+        version: '2.4.0',
+        pymodule: pandas_profiling }
+
 
 
 - name: Setup additional python packages

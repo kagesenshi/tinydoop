@@ -72,6 +72,20 @@
       - texlive-upquote
       - texlive-titling 
       - texlive-ulem
+      - texlive-pdftex
+      - texlive-metafont
+      - texlive-cm
+      - texlive-parskip
+      - texlive-iftex
+      - texlive-euenc
+      - texlive-eurosym
+      - texlive-ucs
+      - texlive-ifluatex
+      - texlive-zapfding
+      - texlive-jknapltx
+      - texlive-rsfs
+      - texlive-dvipdfmx
+      - texlive-glyphlist
 
 # ========== Jupyter Init ========
 - name: Setup Jupyter directories
@@ -141,6 +155,12 @@
     - { package: bokeh,
         version: '1.3.4',
         pymodule: bokeh }
+    - { package: pyviz,
+        version: '0.10.3',
+        pymodule: pyviz }
+    - { package: holoviews,
+        version: '1.12.7',
+        pymodule: holoviews }
     - { package: papermill,
         version: '1.2.0',
         pymodule: papermill }
@@ -152,8 +172,10 @@
   with_items:
     - { extension: '@jupyter-widgets/jupyterlab-manager',
         creates: jupyter-widgets-jupyterlab-manager*  }
-    - { extension: jupyterlab_bokeh,
-        creates: jupyterlab_bokeh* }
+#    - { extension: jupyterlab_bokeh,
+#       creates: jupyterlab_bokeh* }
+    - { extension: '@pyviz/jupyterlab_pyviz',
+        creates: pyviz-jupyterlab_pyviz* }
   when: distro_family == 'fedora'
 
 
@@ -164,8 +186,10 @@
   with_items:
     - { extension: '@jupyter-widgets/jupyterlab-manager',
         creates: jupyter-widgets-jupyterlab-manager*  }
-    - { extension: jupyterlab_bokeh,
-        creates: jupyterlab_bokeh* }
+#    - { extension: jupyterlab_bokeh,
+#        creates: jupyterlab_bokeh* }
+    - { extension: '@pyviz/jupyterlab_pyviz',
+        creates: pyviz-jupyterlab_pyviz* }
   when: distro_family == 'el'
 
 - name: Rebuild Jupyterlab Asset Files (Fedora)
@@ -204,3 +228,18 @@
     enabled: yes
     daemon_reload: yes
     state: restarted
+
+- name: Check FirewallD Exists
+  stat:
+    path: /usr/bin/firewall-cmd
+  register: has_firewalld
+
+- name: Open Firewall
+  firewalld:
+    port: '{{ item }}'
+    permanent: yes
+    immediate: yes
+    state: enabled
+  with_items:
+    - 8000/tcp
+  when: has_firewalld.stat.exists

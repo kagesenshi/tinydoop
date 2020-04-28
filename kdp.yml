@@ -27,6 +27,8 @@
         s3_secret_key: '{{ kdp["s3_secret_key"] }}',
         s3a_bucket: '{{ kdp["s3_bucket"] }}',
         s3a_endpoint: '{{ kdp["s3_endpoint"] }}',
+        spark_metastore_driver: '{{ kdp["spark_metastore_driver"] }}',
+        spark_metastore_driver_class: '{{ kdp["spark_metastore_driver_class"] }}',
         spark_metastore_db: '{{ kdp["spark_metastore_db"] }}',
         spark_metastore_host: '{{ kdp["spark_metastore_host"] }}',
         spark_metastore_port: '{{ kdp["spark_metastore_port"] }}',
@@ -39,14 +41,26 @@
   vars_files:
     - vars.yml
   roles:
+    - { role: postgresql-base }
+    - { role: postgresql-createdb,
+        database: '{{ kdp["spark_metastore_db"] }}',
+        db_user: '{{ kdp["spark_metastore_user"] }}',
+        db_password: '{{ kdp["spark_metastore_password"] }}' }
+    - { role: postgresql-createdb,
+        database: '{{ kdp["airflow_db"] }}',
+        db_user: '{{ kdp["airflow_db_user"] }}',
+        db_password: '{{ kdp["airflow_db_password"] }}' }
     - { role: spark-metastore,
         download_cache: '{{ kdp["download_cache"] }}',
+        spark_metastore_driver: '{{ kdp["spark_metastore_driver"] }}',
+        spark_metastore_driver_class: '{{ kdp["spark_metastore_driver_class"] }}',
         spark_metastore_db: '{{ kdp["spark_metastore_db"] }}',
         spark_metastore_host: '{{ kdp["spark_metastore_host"] }}',
         spark_metastore_port: '{{ kdp["spark_metastore_port"] }}',
         spark_metastore_user: '{{ kdp["spark_metastore_user"] }}',
-        spark_metastore_password: '{{ kdp["spark_metastore_password"] }}' }
-        
+        spark_metastore_password: '{{ kdp["spark_metastore_password"] }}',
+        spark_metastore_creates: '{{ kdp["spark_metastore_creates"] }}',
+        initialize_metastore: '{{ kdp["initialize_metastore"] }}' }
 
 - hosts: master
   vars_files: 
@@ -70,5 +84,24 @@
   roles:
     - { role: jupyterhub-base }
     - { role: jupyter-pyspark-kernel }
+    - { role: metabase }
+    - { role: airflow-base,
+        airflow_dburi: '{{ kdp["airflow_dburi"] }}',
+        airflow_celery_broker_url: '{{ kdp["airflow_celery_broker_url"] }}',
+        airflow_celery_result_backend: '{{ kdp["airflow_celery_result_backend"] }}' }
+    - { role: nifi-base,
+        download_cache: '{{ kdp["download_cache"] }}' }
+  tasks:
+    - name: Create Student Group
+      group:
+        name: student
+        state: present
 
-
+    - name: Create Student User
+      user:
+        name: student
+        group: student
+        home: /home/student/
+        create_home: yes
+        state: present
+        password: "{{ 'password' | password_hash('sha256', '7!%!85!@#7') }}"
