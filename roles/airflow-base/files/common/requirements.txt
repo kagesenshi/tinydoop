@@ -146,7 +146,7 @@ packaging==19.0
 pandas==0.25.0
 pandas-gbq==0.10.0
 parameterized==0.7.0
-paramiko==2.6.0
+paramiko==2.10.1
 pbr==5.4.1
 pendulum==1.4.4
 pinotdb==0.1.1
